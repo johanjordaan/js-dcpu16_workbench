@@ -13,9 +13,10 @@
     <script src="lib/cpu_view.js"></script> 
     
     <script type="text/template" id="debugger_template">
-      <table border>
+      <table id="debugger_source" border>
         <% for(var i=0;i<debug_info.length;i++) { %>
-        <tr id='line_<%= i %>'>
+        <tr id='<%= i %>'>
+          <td width="20px"></td>
           <td><%= zero_fill(debug_info[i].mem_pos.toString(16),4) %></td>
           <td><%= debug_info[i].code %></td>
           <td>
@@ -71,7 +72,6 @@
       var c = null; 
     
       var step = function() {
-        $('#line_'+current_c).css('backgroundColor', '');
         if(c==null) return;
         for(var i=0;i<c.debug_info[current_c].byte_code.length;i++) {
           cpu.step();
@@ -83,8 +83,16 @@
             break;
           }
         }
-        $('#line_'+current_c).css('backgroundColor', 'yellow');
         show_cpu();
+        show_debugger();
+      };
+      
+      var show_debugger = function() {
+        $('#debugger').html(ejs.render($('#debugger_template').html(),{debug_info:c.debug_info}));
+        $('#debugger_source').find('#'+current_c).css('backgroundColor', 'yellow');
+        $('#debugger_source').find('tr').click( function() {
+          alert('Setting breakpoint '+this.id);
+        });
       };
       
       var stop_signal = false;
@@ -93,13 +101,11 @@
         if(!stop_signal) {
           setTimeout("run_step()",$('#run_delay').val());
         }
-      }
+      };
     
       $( function() {
         cpu.reset();
         show_cpu();
-        
-        
         
         $('#step').click( function() {
           step();  
@@ -110,9 +116,7 @@
           cpu.reset();
           cpu.load(0,c.byte_code);
           show_cpu();
-          
-          $('#debugger').html(ejs.render($('#debugger_template').html(),{debug_info:c.debug_info}));
-          $('#line_'+current_c).css('backgroundColor', 'yellow');
+          show_debugger();  
         });
         
         $('#compile').click( function() {
@@ -121,9 +125,7 @@
           c = compile($('#source').val());
           cpu.load(0,c.byte_code);
           show_cpu();
-          
-          $('#debugger').html(ejs.render($('#debugger_template').html(),{debug_info:c.debug_info}));
-          $('#line_'+current_c).css('backgroundColor', 'yellow');
+          show_debugger();
         });
 
         $('#run').click( function() {
@@ -134,6 +136,7 @@
         $('#stop').click( function() {
           stop_signal = true;
         });
+        
 
         
         var test_asm = 'SET [0x30],0x40\nIFE [0x30],0x40\nloop: ADD B,1\nSET PC,loop';
