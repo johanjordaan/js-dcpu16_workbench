@@ -1,0 +1,8 @@
+module.exports = {
+<% for(var op in cpu_constants.operations) { %>
+  'test assembler <%= cpu_constants.operations[op].name %> testcases' : function() {
+    load_and_execute_testcase_file('test/assembler.<%= cpu_constants.operations[op].name %>.testcases.dat');
+  },
+<% } %>
+}
+

@@ -1,0 +1,91 @@
+<html>
+  <head>
+    <script src="js/jquery-1.7.1.min.js"></script> 
+    <script src="js/underscore-min.js"></script> 
+    <script src="js/ejs.min.js"></script>
+    <script src="js/backbone-min.js"></script>
+    
+    <script src="lib/cpu.js"></script> 
+    <script src="lib/scanner.js"></script> 
+    <script src="lib/assembler.js"></script> 
+    
+    <script src="lib/cpu_view.js"></script> 
+    
+    <script type="text/template" id="cpu_template">
+      <table border>
+        <tr>
+          <td>PC</td><td><%= cpu.pc %></td>
+          <td>Cycle</td><td><%= cpu.cycle %></td>
+        </tr>
+        <tr>
+          <td>SP</td><td><%= cpu.sp %></td>
+        </tr>
+      </table>
+      <table border>
+        <tr>
+          <% for(var i=0;i<cpu.registers_ordered.length;i++) { %>
+            <td><%= cpu.registers_ordered[i] %></td>
+          <% } %>
+        <tr>
+        <tr>
+          <% for(var i=0;i<cpu.registers_ordered.length;i++) { %>
+            <td>0x<%= cpu.registers[cpu.registers_ordered[i]].toString(16).toUpperCase() %></td>
+          <% } %>
+        <tr>
+        <tr>
+      </table>
+      <table>
+        <% for(var r=0;r<20;r++) { %>
+        <tr>
+          <td><%= zero_fill((r*8).toString(16),4) %>:</td>
+          <% for(var c=0;c<8;c++) { %>
+            <% var cur_index = (r*8)+c %>
+            <% if(cur_index == cpu.pc) { %>
+              <td id='current_pc'><%= zero_fill(cpu.memory[cur_index].toString(16),4) %></td>
+            <% } else { %>
+              <td><%= zero_fill(cpu.memory[cur_index].toString(16),4) %></td>
+            <% } %>
+          <% } %>
+        </tr>
+        <% } %>
+      </table>
+    </script>
+    
+    <script>
+      $( function() {
+        cpu.reset();
+        show_cpu();
+        
+        $('#step').click( function() {
+          cpu.step();
+          show_cpu();
+        });
+
+        $('#reset').click( function() {
+          cpu.reset();
+          cpu.load(0,[0x7C01,0x0030]);
+          show_cpu();
+        });
+        
+        $('#compile').click( function() {
+          cpu.reset();
+          cpu.load(0,compile($('#source').val()));
+          show_cpu();
+        });
+        
+        var test_asm = 'IFE A,0x20\nSET B,0x30';
+        $('#source').val(test_asm);
+        
+      });
+    </script>
+    
+  </head>
+  <body>
+    <textarea id='source' cols='80' rows='5'></textarea>
+    <br/>
+    <button id='compile'>compile</button>
+    <button id='step'>step</button>
+    <button id='reset'>reset</button>
+    <div id='cpu'></div>
+  </body>
+</html>

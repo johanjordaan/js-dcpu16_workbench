@@ -1,0 +1,15 @@
+<% for(var reg in cpu_constants.registers) { -%>
+<% current_reg = cpu_constants.registers[reg] -%>
+<%= op.name %> <%= current_reg.name %>,0x10     ; <%= C(op.value,current_reg.value,0x10+0x20) %>
+<%= op.name %> [<%= current_reg.name %>],0x10   ; <%= C(op.value,current_reg.value+0x8,0x10+0x20) %>
+<%= op.name %> <%= current_reg.name %>,0x30     ; <%= C(op.value,current_reg.value,0x1f) %> 0x0030
+<%= op.name %> [<%= current_reg.name %>],0x30   ; <%= C(op.value,current_reg.value+0x8,0x1f) %> 0x0030
+<%= op.name %> <%= current_reg.name %>,[0x30]     ; <%= C(op.value,current_reg.value,0x1e) %> 0x0030
+<%= op.name %> [<%= current_reg.name %>],[0x30]   ; <%= C(op.value,current_reg.value+0x8,0x1e) %> 0x0030
+<% } -%>
+<% for(var reg in cpu_constants.special_registers) { -%>
+<% current_reg = cpu_constants.special_registers[reg] -%>
+<%= op.name %> <%= current_reg.name %>,0x10     ; <%= C(op.value,current_reg.value,0x10+0x20) %>
+<%= op.name %> <%= current_reg.name %>,0x30     ; <%= C(op.value,current_reg.value,0x1f) %> 0x0030
+<%= op.name %> <%= current_reg.name %>,[0x30]     ; <%= C(op.value,current_reg.value,0x1e) %> 0x0030
+<% } -%>
