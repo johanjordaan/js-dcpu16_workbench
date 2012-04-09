@@ -33,4 +33,25 @@ load_and_execute_testcase_file = function(filename) {
 
 require('./assembler.test.gen.js');
 
+module.exports = { 
+  'test assembler labels ref' : function() { 
+    var code = ':xxx SET PC,xxx';
+    var byte_code = assembler.generate_byte_code(code);
+    var byte_code_string = [];
+    for(var j=0;j<byte_code.length;j++) 
+      byte_code_string.push(byte_code[j].toString(16));
+    var target_byte_code = [0x7dc1,0x0000];
+    assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code);
+  }, 
+  'test assembler labels ref lookup' : function() { 
+    var code = ':xxx SET PC,[xxx]';
+    var byte_code = assembler.generate_byte_code(code);
+    var byte_code_string = [];
+    for(var j=0;j<byte_code.length;j++) 
+      byte_code_string.push(byte_code[j].toString(16));
+    var target_byte_code = [0x79c1,0x0000];
+    assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code);
+  }, 
+
+}
 
