@@ -5,11 +5,26 @@
     <script src="js/ejs.min.js"></script>
     <script src="js/backbone-min.js"></script>
     
+    <script src="lib/cpu_constants.js"></script> 
     <script src="lib/cpu.js"></script> 
     <script src="lib/scanner.js"></script> 
     <script src="lib/assembler.js"></script> 
     
     <script src="lib/cpu_view.js"></script> 
+    
+    <script type="text/template" id="debugger_template">
+      <table border>
+        <% for(var i=0;i<debug_info.length;i++) { %>
+        <tr id='line_<%= i %>'>
+          <td><%= zero_fill(debug_info[i].mem_pos.toString(16),4) %></td>
+          <td><%= debug_info[i].code %></td>
+          <td>
+            <% for(var j=0;j<debug_info[i].byte_code.length;j++) { %> <%= zero_fill(debug_info[i].byte_code[j].toString(16),4) %>  <% } %>
+          </td>
+        </tr>
+        <% } %>
+      </table>
+    </script>
     
     <script type="text/template" id="cpu_template">
       <table border>
@@ -52,28 +67,76 @@
     </script>
     
     <script>
+      var current_c=0;
+      var c = null; 
+    
+      var step = function() {
+        $('#line_'+current_c).css('backgroundColor', '');
+        if(c==null) return;
+        for(var i=0;i<c.debug_info[current_c].byte_code.length;i++) {
+          cpu.step();
+        }
+        var tmp = 0;
+        for(var i=0;i<c.debug_info.length;i++) {
+          if(cpu.pc==c.debug_info[i].mem_pos) {
+            current_c = i;
+            break;
+          }
+        }
+        $('#line_'+current_c).css('backgroundColor', 'yellow');
+        show_cpu();
+      };
+      
+      var stop_signal = false;
+      var run_step = function() {
+        step();
+        if(!stop_signal) {
+          setTimeout("run_step()",$('#run_delay').val());
+        }
+      }
+    
       $( function() {
         cpu.reset();
         show_cpu();
         
+        
+        
         $('#step').click( function() {
-          cpu.step();
-          show_cpu();
+          step();  
         });
 
         $('#reset').click( function() {
+          current_c=0;
           cpu.reset();
-          cpu.load(0,[0x7C01,0x0030]);
+          cpu.load(0,c.byte_code);
           show_cpu();
+          
+          $('#debugger').html(ejs.render($('#debugger_template').html(),{debug_info:c.debug_info}));
+          $('#line_'+current_c).css('backgroundColor', 'yellow');
         });
         
         $('#compile').click( function() {
+          current_c=0;
           cpu.reset();
-          cpu.load(0,compile($('#source').val()));
+          c = compile($('#source').val());
+          cpu.load(0,c.byte_code);
           show_cpu();
+          
+          $('#debugger').html(ejs.render($('#debugger_template').html(),{debug_info:c.debug_info}));
+          $('#line_'+current_c).css('backgroundColor', 'yellow');
         });
+
+        $('#run').click( function() {
+          stop_signal = false;
+          run_step();
+        });
+
+        $('#stop').click( function() {
+          stop_signal = true;
+        });
+
         
-        var test_asm = 'IFE A,0x20\nSET B,0x30';
+        var test_asm = 'SET [0x30],0x40\nIFE [0x30],0x40\nloop: ADD B,1\nSET PC,loop';
         $('#source').val(test_asm);
         
       });
@@ -81,11 +144,32 @@
     
   </head>
   <body>
-    <textarea id='source' cols='80' rows='5'></textarea>
-    <br/>
-    <button id='compile'>compile</button>
-    <button id='step'>step</button>
-    <button id='reset'>reset</button>
-    <div id='cpu'></div>
+    <table border>
+      <tr>
+        <td>
+          <button id='compile'>compile</button>
+        </td>
+        <td width="300px">
+          <button id='run'>run</button>
+          <input type='text' value='500' id='run_delay' style='width:50px'/>
+          <button id='stop'>stop</button>
+          <button id='step'>step</button>
+          <button id='reset'>reset</button>
+        </td>
+        <td>
+        </td>
+      <tr>
+      <tr height="100%">
+        <td width="300px">
+          <textarea id='source' style="width:100%;height:100%"></textarea>
+        </td>
+        <td width="300px" valign="top">
+          <div id="debugger"></div>
+        </td>
+        <td>
+          <div id="cpu"></div>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>
