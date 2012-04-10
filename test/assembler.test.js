@@ -22,12 +22,12 @@ load_and_execute_testcase_file = function(filename) {
     var code = parts[0].trim();
     var target_byte_code = parts[1].trim().split(' ');
 
-    var byte_code = assembler.generate(code).byte_code;
+    var byte_code = assembler.assemble(code).byte_code;
     var byte_code_string = [];
     for(var j=0;j<byte_code.length;j++) 
       byte_code_string.push(byte_code[j].toString(16));
     
-    assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code);
+    assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code.toString(16));
   }
 }
 
@@ -35,8 +35,36 @@ require('./assembler.test.gen.js');
 
 module.exports = { 
   'test assembler labels ref' : function() { 
-    var code = 'xxx: SET PC,xxx';
-    var byte_code = assembler.generate(code).byte_code;
+    var code = 'SET A,0x30     ; 0x7c01 0x0030 ';
+    var byte_code = assembler.assemble(code).byte_code;
+    var byte_code_string = [];
+    for(var j=0;j<byte_code.length;j++) 
+      byte_code_string.push(byte_code[j].toString(16));
+    var target_byte_code = [0x7c01,0x0030];
+    assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code);
+  }, 
+  'test assembler labels ref' : function() { 
+    var code = 'SET [A],0x10   ; 0xc081';
+    var byte_code = assembler.assemble(code).byte_code;
+    var byte_code_string = [];
+    for(var j=0;j<byte_code.length;j++) 
+      byte_code_string.push(byte_code[j].toString(16));
+    var target_byte_code = [0xc081];
+    assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code);
+  }, 
+  'test assembler labels ref' : function() { 
+    var code = 'IFB [A],0x10   ; 0xc08f';
+    var byte_code = assembler.assemble(code).byte_code;
+    var byte_code_string = [];
+    for(var j=0;j<byte_code.length;j++) 
+      byte_code_string.push(byte_code[j].toString(16));
+    var target_byte_code = [0xc08f];
+    assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code.toString(16));
+  }, 
+  
+/*  'test assembler labels ref' : function() { 
+    var code = 'xxx: SET PC,xxx ;This is my comment';
+    var byte_code = assembler.assemble(code).byte_code;
     var byte_code_string = [];
     for(var j=0;j<byte_code.length;j++) 
       byte_code_string.push(byte_code[j].toString(16));
@@ -45,7 +73,7 @@ module.exports = {
   }, 
   'test assembler labels ref lookup' : function() { 
     var code = 'xxx: SET PC,[xxx]';
-    var byte_code = assembler.generate(code).byte_code;
+    var byte_code = assembler.assemble(code).byte_code;
     var byte_code_string = [];
     for(var j=0;j<byte_code.length;j++) 
       byte_code_string.push(byte_code[j].toString(16));
@@ -54,11 +82,11 @@ module.exports = {
   }, 
   'test assembler debug' : function() {
     var code = 'SET  A, [0x10]\nSET PC , 0 ';
-    var debug_info = assembler.generate(code).debug_info;
+    var debug_info = assembler.assemble(code).debug_info;
     assert.equal(2,debug_info.length);
     assert.equal('SET A,[0x10]',debug_info[0].code);
     assert.equal('SET PC,0',debug_info[1].code);
   },
-
+*/
 }
 
