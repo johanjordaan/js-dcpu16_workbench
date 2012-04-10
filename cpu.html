@@ -97,8 +97,8 @@
       
       var stop_signal = false;
       var run_step = function() {
-        step();
         if(!stop_signal) {
+          step();
           setTimeout("run_step()",$('#run_delay').val());
         }
       };
@@ -112,6 +112,7 @@
         });
 
         $('#reset').click( function() {
+          stop_signal = true;
           current_c=0;
           cpu.reset();
           cpu.load(0,c.byte_code);
@@ -170,7 +171,18 @@
           <div id="debugger"></div>
         </td>
         <td>
-          <div id="cpu"></div>
+          <table>
+            <tr>  
+              <td>
+                <!--canvas id="myCanvas" width="320" height="200"></canvas-->  
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div id="cpu"></div>
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
     </table>
