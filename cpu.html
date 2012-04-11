@@ -45,7 +45,13 @@
       <table id="debugger_source" class='code' cellspacing=0 width="100%">
         <% for(var i=0;i<lines.length;i++) { %>
         <tr id='<%= i %>'>
-          <td width="20px" class='breakpoint' id='<%= lines[i].mem_pos %>'><span/></td>
+          <td width="20px" class='breakpoint' id='<%= lines[i].mem_pos %>'>
+            <% if(breakpoints.indexOf(lines[i].mem_pos)!=-1) { %>
+              <span class='ui-icon ui-icon-bullet'/>
+            <% } else { %>
+              <span/>
+            <% } %>
+          </td>
           <td width="0%"><%= zero_fill(lines[i].mem_pos.toString(16),4) %>:</td>
           <td><%= lines[i].txt %></td>
           <td>
@@ -104,7 +110,7 @@
       var start_position = 0;
       
       var show_debugger = function() {
-        $('#debugger').html(ejs.render($('#debugger_template').html(),{lines:dbg.deassembly.lines}));
+        $('#debugger').html(ejs.render($('#debugger_template').html(),{lines:dbg.deassembly.lines,breakpoints:dbg.breakpoints}));
         $('#debugger_source').find('tr#'+dbg.current_line).css('backgroundColor', 'wheat');
         $('td.breakpoint').click( function() {
           $(this).children('span').toggleClass('ui-icon').toggleClass('ui-icon-bullet');
