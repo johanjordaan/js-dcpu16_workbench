@@ -1,6 +1,33 @@
 <html>
   <head>
+  <style type="text/css">
+    .code {
+      font-family: Courier New;
+    }
+    #source {
+      font-family: Courier New;
+    }
+    .memory_cell {
+      font-size: 0.8em;
+    }
+    .label {
+      font-weight:bold; 
+    }
+    .register_label {
+      font-weight:bold;
+      text-align:left;
+    }
+    .register_value {
+      width:40px;
+      text-align:right;
+      padding-right:10px;
+    }
+  </style>
+
+
+    <link type="text/css" href="style/css/ui-lightness/jquery-ui-1.8.18.custom.css" rel="stylesheet" />	
     <script src="js/jquery-1.7.1.min.js"></script> 
+		<script type="text/javascript" src="style/js/jquery-ui-1.8.18.custom.min.js"></script>
     <script src="js/underscore-min.js"></script> 
     <script src="js/ejs.min.js"></script>
     <script src="js/backbone-min.js"></script>
@@ -10,15 +37,16 @@
     <script src="lib/assembler.js"></script> 
     <script src="lib/deassembler.js"></script> 
     <script src="lib/debugger.js"></script> 
+    <script src="lib/codestore.js"></script> 
     
     <script src="lib/cpu_view.js"></script> 
     
     <script type="text/template" id="debugger_template">
-      <table id="debugger_source" border>
+      <table id="debugger_source" class='code' cellspacing=0 width="100%">
         <% for(var i=0;i<lines.length;i++) { %>
         <tr id='<%= i %>'>
-          <td width="20px"></td>
-          <td><%= zero_fill(lines[i].mem_pos.toString(16),4) %></td>
+          <td width="20px" class='breakpoint' id='<%= lines[i].mem_pos %>'><span/></td>
+          <td width="0%"><%= zero_fill(lines[i].mem_pos.toString(16),4) %>:</td>
           <td><%= lines[i].txt %></td>
           <td>
             <% for(var j=0;j<lines[i].byte_code.length;j++) { %> <%= zero_fill(lines[i].byte_code[j].toString(16),4) %>  <% } %>
@@ -29,38 +57,41 @@
     </script>
     
     <script type="text/template" id="cpu_template">
-      <table border>
+      <table>
         <tr>
-          <td>PC</td><td><%= cpu.pc %></td>
-          <td>Cycle</td><td><%= cpu.cycle %></td>
+          <td class="register_label">PC:</td><td class="register_value"><%= zero_fill(cpu.pc.toString(16),4) %></td>
+          <td class="register_label">SP:</td><td class="register_value"><%= zero_fill(cpu.sp.toString(16),4) %></td>
+          <td class="register_label">Cycle:</td><td class="register_value"><%= zero_fill(cpu.cycle,4) %></td>
         </tr>
         <tr>
-          <td>SP</td><td><%= cpu.sp %></td>
+          <td class="register_label">A:</td><td class="register_value"><%= zero_fill(cpu.registers.A.toString(16),4) %></td>
+          <td class="register_label">B:</td><td class="register_value"><%= zero_fill(cpu.registers.B.toString(16),4) %></td>
+          <td class="register_label">C:</td><td class="register_value"><%= zero_fill(cpu.registers.C.toString(16),4) %></td>
         </tr>
-      </table>
-      <table border>
         <tr>
-          <% for(var i=0;i<cpu.registers_ordered.length;i++) { %>
-            <td><%= cpu.registers_ordered[i] %></td>
-          <% } %>
+          <td class="register_label">X:</td><td class="register_value"><%= zero_fill(cpu.registers.X.toString(16),4) %></td>
+          <td class="register_label">Y:</td><td class="register_value"><%= zero_fill(cpu.registers.Y.toString(16),4) %></td>
+          <td class="register_label">Z:</td><td class="register_value"><%= zero_fill(cpu.registers.Z.toString(16),4) %></td>
+        </tr>
         <tr>
-        <tr>
-          <% for(var i=0;i<cpu.registers_ordered.length;i++) { %>
-            <td>0x<%= cpu.registers[cpu.registers_ordered[i]].toString(16).toUpperCase() %></td>
-          <% } %>
-        <tr>
-        <tr>
+          <td class="register_label">I:</td><td class="register_value"><%= zero_fill(cpu.registers.I.toString(16),4) %></td>
+          <td class="register_label">J:</td><td class="register_value"><%= zero_fill(cpu.registers.J.toString(16),4) %></td>
+          <td></td>
+        </tr>
       </table>
       <table>
+        <tr>
+          <td colspan='9'></td>
+        </td>
         <% for(var r=0;r<20;r++) { %>
         <tr>
-          <td><%= zero_fill((r*8).toString(16),4) %>:</td>
+          <td class='memory_cell label'><%= zero_fill((r*8).toString(16),4) %>:</td>
           <% for(var c=0;c<8;c++) { %>
             <% var cur_index = (r*8)+c %>
             <% if(cur_index == cpu.pc) { %>
-              <td id='current_pc'><%= zero_fill(cpu.memory[cur_index].toString(16),4) %></td>
+              <td id='current_pc' class='memory_cell'><%= zero_fill(cpu.memory[cur_index].toString(16),4) %></td>
             <% } else { %>
-              <td><%= zero_fill(cpu.memory[cur_index].toString(16),4) %></td>
+              <td class='memory_cell'><%= zero_fill(cpu.memory[cur_index].toString(16),4) %></td>
             <% } %>
           <% } %>
         </tr>
@@ -70,59 +101,47 @@
     
     <script>
       var dbg = new Debugger();
-    
-      var step = function() {
-        dbg.step();
-        show_cpu();
-        show_debugger();
-      };
+      var start_position = 0;
       
       var show_debugger = function() {
         $('#debugger').html(ejs.render($('#debugger_template').html(),{lines:dbg.deassembly.lines}));
-        $('#debugger_source').find('#'+dbg.current_line).css('backgroundColor', 'yellow');
-        $('#debugger_source').find('tr').click( function() {
-          alert('Setting breakpoint '+this.id);
+        $('#debugger_source').find('#'+dbg.current_line).css('backgroundColor', 'wheat');
+        $('td.breakpoint').click( function() {
+          $(this).children('span').toggleClass('ui-icon').toggleClass('ui-icon-bullet');
+          dbg.toggle_breakpoint(this.id);
         });
       };
-      
-      var stop_signal = false;
-      var run_step = function() {
-        if(!stop_signal) {
-          step();
-          setTimeout("run_step()",$('#run_delay').val());
-        }
-      };
-    
+   
       $( function() {
         show_cpu();
         
         $('#step').click( function() {
-          step();
+          dbg.step();
+          show_cpu();
+          show_debugger();
         });
 
         $('#reset').click( function() {
-          stop_signal = true;
           dbg.reset();
           show_cpu();
           show_debugger();  
         });
         
         $('#compile').click( function() {
-          dbg.load(0,$('#source').val());
+          dbg.load(start_position,$('#source').val());
           show_cpu();
           show_debugger();
         });
 
         $('#run').click( function() {
-          stop_signal = false;
-          run_step();
+          dbg.run(function() { show_cpu();show_debugger();});
         });
 
         $('#stop').click( function() {
-          stop_signal = true;
+          dbg.pause();
         });
         
-        var test_asm = 'SET [0x30],0x40\nIFE [0x30],0x40\nloop: ADD B,1\nSET PC,loop';
+        var test_asm = '      SET [0x30],0x40\n      IFE [0x30],0x40\nloop: ADD B,1\n      SET PC,loop';
         $('#source').val(test_asm);
         
       });
@@ -130,35 +149,32 @@
     
   </head>
   <body>
-    <table border>
+    <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix" style="height:50px">
+      <div class="ui-dialog-title ui-dialog-titlebar ui-dialog">DCPU-16 Emulator</div>
+    </div>
+    <table style="width:100%;height:100%">
       <tr>
-        <td>
+        <td colspan='3'>
+          <button id='settings'>settings</button>
+          <button id='load'>load</button>
+          <button id='save'>save</button>
           <button id='compile'>compile</button>
-        </td>
-        <td width="300px">
           <button id='run'>run</button>
-          <input type='text' value='500' id='run_delay' style='width:50px'/>
           <button id='stop'>stop</button>
           <button id='step'>step</button>
           <button id='reset'>reset</button>
+          <button id='about'>about</button>
         </td>
-        <td>
-        </td>
+      </tr>
       <tr>
-      <tr height="100%">
-        <td width="300px">
+        <td width="300px" valign="top" class='code'>
           <textarea id='source' style="width:100%;height:100%"></textarea>
         </td>
-        <td width="300px" valign="top">
+        <td width="500px" valign="top">
           <div id="debugger"></div>
         </td>
         <td>
           <table>
-            <tr>
-              <td>
-                <!--canvas id="myCanvas" width="320" height="200"></canvas-->  
-              </td>
-            </tr>
             <tr>
               <td>
                 <div id="cpu"></div>
@@ -168,5 +184,85 @@
         </td>
       </tr>
     </table>
+
+    <div id='file_dialog'>Hallo world</div>
+    <div id='about_dialog'>
+      Find the source here : <a href='https://github.com/whoatemydomain/js-0x10c'>github</a>
+      <ul>
+        <li> Finish the actual CPU functionality (Only SET,ADD and IFE works sort of) </li>
+        <li> Finish loading and saving </li>
+        <li> Add breakpoints </li>
+        <li> Finish ability to load code to
+      </ul>
+    </div>
+    
+    <div id='settings_dialog'>
+      <table>
+        <tr>
+          <td>Delay between steps</td>
+          <td>:<input type='text' id='settings_run_delay' style='width:50px'/> ms</td>
+        </tr>
+        <tr>
+          <td>Load code to</td>
+          <td>:<input type='text' id='settings_start_position' style='width:50px'/></td>
+        </tr>
+      </table>
+    </div>
+
   </body>
+  <script>
+    $('body').addClass('ui-widget-content').addClass('ui-widget');
+    $('#title').accordion({header:'h3'});  
+    $('button').button();
+    $('#file_dialog').dialog({
+      autoOpen: false,
+      width: 600,
+      modal: true,
+      title : 'Hallo',
+      buttons: {
+        "Ok": function() { 
+          $(this).dialog("close"); 
+        }, 
+        "Cancel": function() { 
+          $(this).dialog("close"); 
+        } 
+      }
+    });
+    $('#load').click(function(){
+      $('#file_dialog').dialog('open');
+      return false;
+    });
+    
+    $('#settings_dialog').dialog({
+      autoOpen: false,
+      width: 600,
+      modal: true,
+      title : 'Settings',
+      buttons: {
+        "Ok": function() { 
+          $(this).dialog("close"); 
+          dbg.run_delay = $('#settings_run_delay').val();
+          start_position = $('#settings_start_position').val();;
+        }, 
+        "Cancel": function() { 
+          $(this).dialog("close"); 
+        } 
+      }
+    });
+    $('#settings').click(function(){
+      $('#settings_run_delay').val(dbg.run_delay);
+      $('#settings_start_position').val(start_position);
+      $('#settings_dialog').dialog('open');
+      return false;
+    });
+    
+    $('#about_dialog').dialog({
+      autoOpen: false, width: 600, modal: true, title : 'About',
+      buttons: { "Ok": function() { $(this).dialog("close"); }, }
+    });
+    $('#about').click(function(){ $('#about_dialog').dialog('open'); return false; });
+    
+
+    
+  </script>
 </html>
