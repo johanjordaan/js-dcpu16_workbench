@@ -9,18 +9,20 @@
     <script src="lib/cpu.js"></script> 
     <script src="lib/scanner.js"></script> 
     <script src="lib/assembler.js"></script> 
+    <script src="lib/deassembler.js"></script> 
+    
     
     <script src="lib/cpu_view.js"></script> 
     
     <script type="text/template" id="debugger_template">
       <table id="debugger_source" border>
-        <% for(var i=0;i<debug_info.length;i++) { %>
+        <% for(var i=0;i<lines.length;i++) { %>
         <tr id='<%= i %>'>
           <td width="20px"></td>
-          <td><%= zero_fill(debug_info[i].mem_pos.toString(16),4) %></td>
-          <td><%= debug_info[i].code %></td>
+          <td><%= zero_fill(lines[i].mem_pos.toString(16),4) %></td>
+          <td><%= lines[i].txt %></td>
           <td>
-            <% for(var j=0;j<debug_info[i].byte_code.length;j++) { %> <%= zero_fill(debug_info[i].byte_code[j].toString(16),4) %>  <% } %>
+            <% for(var j=0;j<lines[i].byte_code.length;j++) { %> <%= zero_fill(lines[i].byte_code[j].toString(16),4) %>  <% } %>
           </td>
         </tr>
         <% } %>
@@ -69,16 +71,17 @@
     
     <script>
       var current_c=0;
-      var c = null; 
+      var assembly = null; 
+      var deassembly = null;
     
       var step = function() {
-        if(c==null) return;
-        for(var i=0;i<c.debug_info[current_c].byte_code.length;i++) {
+        if(deassembly==null) return;
+        for(var i=0;i<deassembly.lines[current_c].byte_code.length;i++) {
           cpu.step();
         }
         var tmp = 0;
-        for(var i=0;i<c.debug_info.length;i++) {
-          if(cpu.pc==c.debug_info[i].mem_pos) {
+        for(var i=0;i<deassembly.lines.length;i++) {
+          if(cpu.pc==deassembly.lines[i].mem_pos) {
             current_c = i;
             break;
           }
@@ -88,7 +91,8 @@
       };
       
       var show_debugger = function() {
-        $('#debugger').html(ejs.render($('#debugger_template').html(),{debug_info:c.debug_info}));
+        if(deassembly == null) return;
+        $('#debugger').html(ejs.render($('#debugger_template').html(),{lines:deassembly.lines}));
         $('#debugger_source').find('#'+current_c).css('backgroundColor', 'yellow');
         $('#debugger_source').find('tr').click( function() {
           alert('Setting breakpoint '+this.id);
@@ -115,7 +119,7 @@
           stop_signal = true;
           current_c=0;
           cpu.reset();
-          cpu.load(0,c.byte_code);
+          cpu.load(0,assembly.byte_code);
           show_cpu();
           show_debugger();  
         });
@@ -123,8 +127,9 @@
         $('#compile').click( function() {
           current_c=0;
           cpu.reset();
-          c = compile($('#source').val());
-          cpu.load(0,c.byte_code);
+          assembly = assemble($('#source').val());
+          deassembly = deassemble(assembly.byte_code,assembly.labels);
+          cpu.load(0,assembly.byte_code);
           show_cpu();
           show_debugger();
         });
@@ -172,7 +177,7 @@
         </td>
         <td>
           <table>
-            <tr>  
+            <tr>
               <td>
                 <!--canvas id="myCanvas" width="320" height="200"></canvas-->  
               </td>
