@@ -1,6 +1,5 @@
 var assert = require('assert');
 var fs = require('fs');
-var scanner = require('../lib/scanner');
 var assembler = require('../lib/assembler');
 var deassembler = require('../lib/deassembler');
 

@@ -7,10 +7,9 @@
     
     <script src="lib/cpu_constants.js"></script> 
     <script src="lib/cpu.js"></script> 
-    <script src="lib/scanner.js"></script> 
     <script src="lib/assembler.js"></script> 
     <script src="lib/deassembler.js"></script> 
-    
+    <script src="lib/debugger.js"></script> 
     
     <script src="lib/cpu_view.js"></script> 
     
@@ -70,30 +69,17 @@
     </script>
     
     <script>
-      var current_c=0;
-      var assembly = null; 
-      var deassembly = null;
+      var dbg = new Debugger();
     
       var step = function() {
-        if(deassembly==null) return;
-        for(var i=0;i<deassembly.lines[current_c].byte_code.length;i++) {
-          cpu.step();
-        }
-        var tmp = 0;
-        for(var i=0;i<deassembly.lines.length;i++) {
-          if(cpu.pc==deassembly.lines[i].mem_pos) {
-            current_c = i;
-            break;
-          }
-        }
+        dbg.step();
         show_cpu();
         show_debugger();
       };
       
       var show_debugger = function() {
-        if(deassembly == null) return;
-        $('#debugger').html(ejs.render($('#debugger_template').html(),{lines:deassembly.lines}));
-        $('#debugger_source').find('#'+current_c).css('backgroundColor', 'yellow');
+        $('#debugger').html(ejs.render($('#debugger_template').html(),{lines:dbg.deassembly.lines}));
+        $('#debugger_source').find('#'+dbg.current_line).css('backgroundColor', 'yellow');
         $('#debugger_source').find('tr').click( function() {
           alert('Setting breakpoint '+this.id);
         });
@@ -108,28 +94,21 @@
       };
     
       $( function() {
-        cpu.reset();
         show_cpu();
         
         $('#step').click( function() {
-          step();  
+          step();
         });
 
         $('#reset').click( function() {
           stop_signal = true;
-          current_c=0;
-          cpu.reset();
-          cpu.load(0,assembly.byte_code);
+          dbg.reset();
           show_cpu();
           show_debugger();  
         });
         
         $('#compile').click( function() {
-          current_c=0;
-          cpu.reset();
-          assembly = assemble($('#source').val());
-          deassembly = deassemble(assembly.byte_code,assembly.labels);
-          cpu.load(0,assembly.byte_code);
+          dbg.load(0,$('#source').val());
           show_cpu();
           show_debugger();
         });
@@ -142,8 +121,6 @@
         $('#stop').click( function() {
           stop_signal = true;
         });
-        
-
         
         var test_asm = 'SET [0x30],0x40\nIFE [0x30],0x40\nloop: ADD B,1\nSET PC,loop';
         $('#source').val(test_asm);
