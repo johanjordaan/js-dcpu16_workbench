@@ -62,16 +62,16 @@ module.exports = {
     assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code.toString(16));
   }, 
   
-/*  'test assembler labels ref' : function() { 
+  'test assembler labels ref' : function() { 
     var code = 'xxx: SET PC,xxx ;This is my comment';
     var byte_code = assembler.assemble(code).byte_code;
     var byte_code_string = [];
     for(var j=0;j<byte_code.length;j++) 
       byte_code_string.push(byte_code[j].toString(16));
     var target_byte_code = [0x7dc1,0x0000];
-    assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code);
+    assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code.toString(16));
   }, 
-  'test assembler labels ref lookup' : function() { 
+/*  'test assembler labels ref lookup' : function() { 
     var code = 'xxx: SET PC,[xxx]';
     var byte_code = assembler.assemble(code).byte_code;
     var byte_code_string = [];
