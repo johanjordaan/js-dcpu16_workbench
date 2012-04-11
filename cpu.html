@@ -105,7 +105,7 @@
       
       var show_debugger = function() {
         $('#debugger').html(ejs.render($('#debugger_template').html(),{lines:dbg.deassembly.lines}));
-        $('#debugger_source').find('#'+dbg.current_line).css('backgroundColor', 'wheat');
+        $('#debugger_source').find('tr#'+dbg.current_line).css('backgroundColor', 'wheat');
         $('td.breakpoint').click( function() {
           $(this).children('span').toggleClass('ui-icon').toggleClass('ui-icon-bullet');
           dbg.toggle_breakpoint(this.id);
