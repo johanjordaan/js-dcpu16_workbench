@@ -16,11 +16,14 @@
     .register_label {
       font-weight:bold;
       text-align:left;
+      padding :0 0 0 0;
+      margin:0 0 0 10;
     }
     .register_value {
       width:40px;
       text-align:right;
-      padding-right:10px;
+      padding :0 10 0 0;
+      margin:0 0 10 0;
     }
   </style>
 
@@ -47,7 +50,7 @@
         <tr id='<%= i %>'>
           <td width="20px" class='breakpoint' id='<%= lines[i].mem_pos %>'>
             <% if(breakpoints.indexOf(lines[i].mem_pos)!=-1) { %>
-              <span class='ui-icon ui-icon-bullet'/>
+              <span class='ui-icon ui-icon-star'/>
             <% } else { %>
               <span/>
             <% } %>
@@ -113,7 +116,7 @@
         $('#debugger').html(ejs.render($('#debugger_template').html(),{lines:dbg.deassembly.lines,breakpoints:dbg.breakpoints}));
         $('#debugger_source').find('tr#'+dbg.current_line).css('backgroundColor', 'wheat');
         $('td.breakpoint').click( function() {
-          $(this).children('span').toggleClass('ui-icon').toggleClass('ui-icon-bullet');
+          $(this).children('span').toggleClass('ui-icon').toggleClass('ui-icon-star');
           dbg.toggle_breakpoint(this.id);
         });
       };
@@ -197,8 +200,7 @@
       <ul>
         <li> Finish the actual CPU functionality (Only SET,ADD and IFE works sort of) </li>
         <li> Finish loading and saving </li>
-        <li> Add breakpoints </li>
-        <li> Finish ability to load code to
+        <li> Finish ability to load to specific memory locations </li>
       </ul>
     </div>
     
@@ -267,8 +269,6 @@
       buttons: { "Ok": function() { $(this).dialog("close"); }, }
     });
     $('#about').click(function(){ $('#about_dialog').dialog('open'); return false; });
-    
-
     
   </script>
 </html>
