@@ -149,10 +149,6 @@
         $('#stop').click( function() {
           dbg.pause();
         });
-        
-        var test_asm = '      SET [0x30],0x40\n      IFE [0x30],0x40\nloop: ADD B,1\n      SET PC,loop';
-        $('#source').val(test_asm);
-        
       });
     </script>
     
@@ -164,22 +160,31 @@
     <table style="width:100%;height:100%">
       <tr>
         <td colspan='3'>
-          <button id='settings'>settings</button>
-          <button id='load'>load</button>
+          <button id='new'>new</button>
           <button id='save'>save</button>
+          <button id='load'>load</button>
           <button id='compile'>compile</button>
           <button id='run'>run</button>
           <button id='stop'>stop</button>
           <button id='step'>step</button>
           <button id='reset'>reset</button>
-          <button id='about'>about</button>
+          <button id='about' style='float:right'>about</button>
+          <button id='settings' style='float:right' >settings</button>
         </td>
       </tr>
       <tr>
-        <td width="300px" valign="top" class='code'>
-          <textarea id='source' style="width:100%;height:100%"></textarea>
+        <td width="400px" valign="top" class='code'>
+          <table style="width:100%;height:100%">
+            <tr valign='top' style='height:0'>
+              <td><input type='text' id='source_label' style='width:100%' disabled></input></td>
+            </tr>
+            <tr valign="top">
+              <td colspan='2'><textarea id='source' cols='80' wrap='off' style='width:100%;height:100%' disabled></textarea></td>
+            </tr>
+          </table>
         </td>
-        <td width="500px" valign="top">
+
+        <td width="400px" valign="top">
           <div id="debugger"></div>
         </td>
         <td>
@@ -194,7 +199,7 @@
       </tr>
     </table>
 
-    <div id='file_dialog'>Hallo world</div>
+    <div id='load_dialog'>Hallo world</div>
     <div id='about_dialog'>
       Find the source here : <a href='https://github.com/whoatemydomain/js-0x10c'>github</a>
       <ul>
@@ -216,17 +221,26 @@
         </tr>
       </table>
     </div>
+    
+    <div id='new_dialog'>
+      <table>
+        <tr>
+          <td>Name</td>
+          <td>: <input type='text' id='new_name' style='width:150px'/> </td>
+        </tr>
+      </table>
+    </div>
 
   </body>
   <script>
     $('body').addClass('ui-widget-content').addClass('ui-widget');
     $('#title').accordion({header:'h3'});  
     $('button').button();
-    $('#file_dialog').dialog({
+    $('#load_dialog').dialog({
       autoOpen: false,
       width: 600,
       modal: true,
-      title : 'Hallo',
+      title : 'Load',
       buttons: {
         "Ok": function() { 
           $(this).dialog("close"); 
@@ -237,7 +251,7 @@
       }
     });
     $('#load').click(function(){
-      $('#file_dialog').dialog('open');
+      $('#load_dialog').dialog('open');
       return false;
     });
     
@@ -269,6 +283,47 @@
       buttons: { "Ok": function() { $(this).dialog("close"); }, }
     });
     $('#about').click(function(){ $('#about_dialog').dialog('open'); return false; });
+
+
+    handle_code_change = function() {
+      if(pending_changes) return;
+      pending_changes = true;
+      $('#source_label').val('*'+code_label);
+    }
+    
+    var code_label='';
+    var pending_changes=false;
+    $('#new_dialog').dialog({
+      autoOpen: false, width: 600, modal: true, title : 'New',
+      buttons: {
+        "Ok": function() { 
+          $(this).dialog("close"); 
+          code_label = $('#new_name').val();
+          pending_changes = false;
+          $('#new_name').val('');
+          $('#source_label').val(code_label);
+          $('#source').removeAttr('disabled');
+          $('#source').val('      SET [0x30],0x40\n      IFE [0x30],0x40\nloop: ADD B,1\n      SET PC,loop');
+          handle_code_change();
+        }, 
+        "Cancel": function() { $(this).dialog("close"); } 
+      }
+    });
+    $('#new').click(function(){ $('#new_dialog').dialog('open'); return false; });
+
+    $('#source').change( function() {
+      handle_code_change();
+    });
+
+    $('#source').keypress( function() {
+      handle_code_change();
+    });
+    $('#save').click( function() {
+      pending_changes = false;
+      $('#source_label').val(code_label);
+    });
+    
+    
     
   </script>
 </html>
