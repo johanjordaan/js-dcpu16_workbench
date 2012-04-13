@@ -1,20 +1,18 @@
-js-0x10c 
-=============
-
-This is a Assembler and CPU emulator for 0x10c in javascript.
-
-The process works as follows: 
------------------------------
-TBD
+js-dcpu_16 Workbench 
+====================
+A live version of the workbench is hosted [here](http://dcpu16_workbench.whoatemydomain.co.za).
 
 Installing
-----------
-npm install js-0x10c ** This is not working yet ....
-npd install -d
+-----------------------------
+npm install -d
+npm install mocha -g
+npm install uglify-js -g
 
-Usage
------
-TBD 
+
+Running the tests
+-----------------------------
+make test
+
 
 
 
