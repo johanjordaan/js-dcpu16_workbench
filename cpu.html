@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
   <head>
   <style type="text/css">
@@ -43,6 +44,17 @@
     <script src="lib/codestore.js"></script> 
     
     <script src="lib/cpu_view.js"></script> 
+
+    <script type="text/template" id="code_list_template">
+      <table cellspacing=0 width="100%" class='table_outer'>
+        <% for(var i=0;i<codes.length;i++) { %>
+        <tr>
+          <td id='<%= codes[i].key %>'><%= codes[i].name %></td>
+          <td><%= codestore.load('code',codes[i].name).split('\n')[0]   %></td>
+        </tr>
+        <% } %>
+      </table>
+    </script>
     
     <script type="text/template" id="debugger_template">
       <table id="debugger_source" class='code' cellspacing=0 width="100%">
@@ -184,7 +196,7 @@
           </table>
         </td>
 
-        <td width="400px" valign="top">
+        <td width="450px" valign="top">
           <div id="debugger"></div>
         </td>
         <td>
@@ -199,7 +211,9 @@
       </tr>
     </table>
 
-    <div id='load_dialog'>Hallo world</div>
+    <div id='load_dialog'>
+      <div id='code_list'></div>
+    </div>
     <div id='about_dialog'>
       Find the source here : <a href='https://github.com/whoatemydomain/js-0x10c'>github</a>
       <ul>
@@ -233,12 +247,17 @@
 
   </body>
   <script>
+    dbg.run_delay = codestore.loadInt('settings','run_delay',200);
+    start_position = codestore.loadInt('settings','start_position',0);
+        
+  
     $('body').addClass('ui-widget-content').addClass('ui-widget');
     $('#title').accordion({header:'h3'});  
     $('button').button();
     $('#load_dialog').dialog({
       autoOpen: false,
       width: 600,
+      height: 300,
       modal: true,
       title : 'Load',
       buttons: {
@@ -250,7 +269,10 @@
         } 
       }
     });
+    var codes = [];
     $('#load').click(function(){
+      codes = codestore.findKeys('code');
+      $('#code_list').html(ejs.render($('#code_list_template').html(),{codes:codes}));
       $('#load_dialog').dialog('open');
       return false;
     });
@@ -265,6 +287,9 @@
           $(this).dialog("close"); 
           dbg.run_delay = $('#settings_run_delay').val();
           start_position = $('#settings_start_position').val();;
+          
+          codestore.save('settings','run_delay',dbg.run_delay);
+          codestore.save('settings','start_position',start_position);
         }, 
         "Cancel": function() { 
           $(this).dialog("close"); 
@@ -303,7 +328,7 @@
           $('#new_name').val('');
           $('#source_label').val(code_label);
           $('#source').removeAttr('disabled');
-          $('#source').val('      SET [0x30],0x40\n      IFE [0x30],0x40\nloop: ADD B,1\n      SET PC,loop');
+          $('#source').val('; Some sample code\n      SET [0x30],0x40\n      IFE [0x30],0x40\nloop: ADD B,1\n      SET PC,loop');
           handle_code_change();
         }, 
         "Cancel": function() { $(this).dialog("close"); } 
@@ -314,13 +339,14 @@
     $('#source').change( function() {
       handle_code_change();
     });
-
+  
     $('#source').keypress( function() {
       handle_code_change();
     });
     $('#save').click( function() {
       pending_changes = false;
       $('#source_label').val(code_label);
+      codestore.save('code',code_label,$('#source').val());
     });
     
     
