@@ -1,6 +1,7 @@
 var assert = require('assert');
 var fs = require('fs');
 var assembler = require('../lib/assembler');
+var code_utils = require('../lib/code_utils');
 
 check_byte_code = function(a,b) {
   if(a.length != b.length)
@@ -69,7 +70,18 @@ module.exports = {
       byte_code_string.push(byte_code[j].toString(16));
     var target_byte_code = [0x7dc1,0x0000];
     assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code.toString(16));
-  }, 
+  },
+  'test assembler jsr' : function() { 
+    var code = 'JSR 0x40';
+    var byte_code = assembler.assemble(code).byte_code;
+    var byte_code_string = byte_array_to_string(byte_code);
+    var target_byte_code = [0x7c10,0x0040];
+    var target_byte_code_string = byte_array_to_string(target_byte_code);
+    
+    assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code_string);
+  },
+
+  
 /*  'test assembler labels ref lookup' : function() { 
     var code = 'xxx: SET PC,[xxx]';
     var byte_code = assembler.assemble(code).byte_code;
