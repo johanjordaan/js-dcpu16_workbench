@@ -80,6 +80,24 @@ module.exports = {
     
     assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code_string);
   },
+  'test assembler jsr mem lookup' : function() { 
+    var code = 'JSR [0x40]';
+    var byte_code = assembler.assemble(code).byte_code;
+    var byte_code_string = byte_array_to_string(byte_code);
+    var target_byte_code = [0x7810,0x0040];
+    var target_byte_code_string = byte_array_to_string(target_byte_code);
+    
+    assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code_string);
+  },
+  'test assembler jsr mem lookup label' : function() { 
+    var code = 'JSR [func]\nfunc: SET A,0x10';
+    var byte_code = assembler.assemble(code).byte_code;
+    var byte_code_string = byte_array_to_string(byte_code);
+    var target_byte_code = [0x7810,0x0002,0xc001];
+    var target_byte_code_string = byte_array_to_string(target_byte_code);
+    
+    assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code_string);
+  },
 
   
 /*  'test assembler labels ref lookup' : function() { 

@@ -328,7 +328,7 @@
           $('#new_name').val('');
           $('#source_label').val(code_label);
           $('#source').removeAttr('disabled');
-          $('#source').val('; Some sample code\n      SET [0x30],0x40\n      IFE [0x30],0x40\nloop: ADD B,1\n      SET PC,loop');
+          $('#source').val('; jsr test\n      JSR func\n      SET B,A\nfunc: SET A,0x40\n      ADD B,A\n      SET PC,POP ');
           handle_code_change();
         }, 
         "Cancel": function() { $(this).dialog("close"); } 

@@ -53,8 +53,10 @@ module.exports = {
     var assembly = assembler.assemble(orig_code);
     var byte_code = assembly.byte_code;
     var labels = assembly.labels;
-    var code = deassembler.deassemble(byte_code,labels).source;
+    var deassembly = deassembler.deassemble(byte_code,labels);
+    var code = deassembly.source;
     assert.equal(code,target_code);
+    assert.equal(2,deassembly.lines[0].byte_code.length);
   }, 
 
   
