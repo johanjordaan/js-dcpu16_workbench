@@ -26,6 +26,9 @@
       padding :0 10 0 0;
       margin:0 0 10 0;
     }
+    .selected {
+      background:wheat;
+    }
   </style>
 
 
@@ -46,11 +49,12 @@
     <script src="lib/cpu_view.js"></script> 
 
     <script type="text/template" id="code_list_template">
-      <table cellspacing=0 width="100%" class='table_outer'>
+      <table id='code_list' cellspacing=0 width="100%">
         <% for(var i=0;i<codes.length;i++) { %>
-        <tr>
-          <td id='<%= codes[i].key %>'><%= codes[i].name %></td>
-          <td><%= codestore.load('code',codes[i].name).split('\n')[0]   %></td>
+        <tr id='<%= codes[i].key %>'>
+          <td><%= codes[i].name %></td>
+          <td><%= codestore.load('code',codes[i].name).split('\n')[0] %></td> 
+          <td><span class="ui-icon ui-icon-close delete_code_button"></span></td>
         </tr>
         <% } %>
       </table>
@@ -174,6 +178,7 @@
         <td colspan='3'>
           <button id='new'>new</button>
           <button id='save'>save</button>
+          <button id='saveas'>save as</button>
           <button id='load'>load</button>
           <button id='compile'>compile</button>
           <button id='run'>run</button>
@@ -245,6 +250,16 @@
       </table>
     </div>
 
+    <div id='saveas_dialog'>
+      <table>
+        <tr>
+          <td>Name</td>
+          <td>: <input type='text' id='saveas_name' style='width:150px'/> </td>
+        </tr>
+      </table>
+    </div>
+
+    
   </body>
   <script>
     dbg.run_delay = codestore.loadInt('settings','run_delay',200);
@@ -262,6 +277,15 @@
       title : 'Load',
       buttons: {
         "Ok": function() { 
+          var key = $('#code_list').find('.selected').attr('id');
+          if(typeof(key) != 'undefined') { 
+            var keyParts = codestore.splitKey(key);
+            code_label = keyParts.key;  
+            $('#source').val(codestore.load(keyParts.table,keyParts.key,''));
+            $('#source').removeAttr('disabled');
+            pending_changes = false;
+            $('#source_label').val(code_label);
+          }
           $(this).dialog("close"); 
         }, 
         "Cancel": function() { 
@@ -270,9 +294,25 @@
       }
     });
     var codes = [];
-    $('#load').click(function(){
+    $('#load').click(function() {
       codes = codestore.findKeys('code');
       $('#code_list').html(ejs.render($('#code_list_template').html(),{codes:codes}));
+      $('#code_list').find('tr').click(function() { 
+        $('#code_list').find('tr').removeClass('selected');
+        $(this).toggleClass('selected'); 
+      });
+      $('.delete_code_button').click(function() { 
+        $('#code_list').find('tr').removeClass('selected');
+        var key = $(this).parent().parent().attr('id');
+        var keyParts = codestore.splitKey(key);
+        codestore.delete(key);
+        $(this).parent().parent().remove();
+        if(keyParts.key == code_label) {
+          pending_changes = true;
+          handle_code_changes();
+        }
+      });
+
       $('#load_dialog').dialog('open');
       return false;
     });
@@ -328,7 +368,7 @@
           $('#new_name').val('');
           $('#source_label').val(code_label);
           $('#source').removeAttr('disabled');
-          $('#source').val('; jsr test\n      JSR func\n      SET B,A\nfunc: SET A,0x40\n      ADD B,A\n      SET PC,POP ');
+          $('#source').val('');
           handle_code_change();
         }, 
         "Cancel": function() { $(this).dialog("close"); } 
@@ -336,6 +376,25 @@
     });
     $('#new').click(function(){ $('#new_dialog').dialog('open'); return false; });
 
+    $('#saveas_dialog').dialog({
+      autoOpen: false, width: 600, modal: true, title : 'Save As',
+      buttons: {
+        "Ok": function() { 
+          $(this).dialog("close"); 
+          code_label = $('#saveas_name').val();
+          pending_changes = true;
+          $('#saveas_name').val('');
+          $('#source_label').val(code_label);
+          codestore.save('code',code_label,$('#source').val());
+          handle_code_change();
+        }, 
+        "Cancel": function() { $(this).dialog("close"); } 
+      }
+    });
+    $('#saveas').click(function(){ $('#saveas_dialog').dialog('open'); return false; });
+
+    
+    
     $('#source').change( function() {
       handle_code_change();
     });
@@ -348,6 +407,27 @@
       $('#source_label').val(code_label);
       codestore.save('code',code_label,$('#source').val());
     });
+    $('#source').keydown( function(e) {
+      if(e.keyCode === 9) { // tab was pressed
+        // get caret position/selection
+        var start = this.selectionStart;
+            end = this.selectionEnd;
+
+        var $this = $(this);
+
+        // set textarea value to: text before caret + tab + text after caret
+        $this.val($this.val().substring(0, start)
+                    + "\t"
+                    + $this.val().substring(end));
+
+        // put caret at right position again
+        this.selectionStart = this.selectionEnd = start + 1;
+
+        // prevent the focus lose
+        return false;
+    }
+    });
+    
     
     
     
