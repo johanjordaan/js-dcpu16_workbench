@@ -29,6 +29,12 @@
     .selected {
       background:wheat;
     }
+    #ribbon {
+      position: fixed;
+      top: 0;
+      right: 0;
+      z-index: 2;
+    }
   </style>
 
 
@@ -170,12 +176,16 @@
     
   </head>
   <body>
+    <a href="http://github.com/whoatemydomain/js-0x10c"> 
+		  <img alt="Fork me on GitHub" id="ribbon" src="http://s3.amazonaws.com/github/ribbons/forkme_right_white_ffffff.png"> 
+		</a>
+  
     <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix" style="height:50px">
       <div class="ui-dialog-title ui-dialog-titlebar ui-dialog">DCPU-16 Emulator</div>
     </div>
     <table style="width:100%;height:100%">
       <tr>
-        <td colspan='3'>
+        <td colspan='3' style='padding-right:150px'>
           <button id='new'>new</button>
           <button id='save'>save</button>
           <button id='saveas'>save as</button>
@@ -222,9 +232,13 @@
     <div id='about_dialog'>
       Find the source here : <a href='https://github.com/whoatemydomain/js-0x10c'>github</a>
       <ul>
-        <li> Finish the actual CPU functionality (Only SET,ADD and IFE works sort of) </li>
-        <li> Finish loading and saving </li>
-        <li> Finish ability to load to specific memory locations </li>
+        <li> Show memory and register changes from the last instruction in another color. </li>
+        <li> Do dynamic memory deassembly to handle self-modifying code. </li>
+        <li> Finish ability to load to specific memory locations. </li>
+        <li> Add some propper error handling. </li>
+        <li> Add memory mapped devices like a screen. </li>
+        <li> Allow memory views. </li>
+        <li> Impliment propper instruction as a preprocessor ... INC, MOV, AX,BX etc</li>
       </ul>
     </div>
     
