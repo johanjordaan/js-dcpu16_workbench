@@ -4,3 +4,4 @@ test/assembler.test.gen.js
 lib_min
 package
 *.tar.gz
+js-dcpu16_workbench

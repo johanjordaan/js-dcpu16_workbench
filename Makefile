@@ -1,5 +1,6 @@
 LIB = $(shell ls -l lib/*.js | awk -F '/' '{print "lib_min/"$$NF}')
 UGLIFY_FLAGS = --no-mangle 
+VERSION = 'v0.1'
 
 all: test minify package
 
@@ -27,8 +28,8 @@ package: minify
 	@mkdir js-dcpu16_workbench/lib -p 
 	@cp lib_min/*.js js-dcpu16_workbench/lib/ 
 	@cp js/*.js js-dcpu16_workbench/js/
-	@cp workbench.html js-dcpu16_workbench/index.html
+	@sed 's/version:dev/version:$(VERSION)/' workbench.html > js-dcpu16_workbench/index.html
 	@cp -r style js-dcpu16_workbench/style
-	@tar czf js-dcpu16_workbench.tar.gz js-dcpu16_workbench
+	@tar czf js-dcpu16_workbench_$(VERSION).tar.gz js-dcpu16_workbench
 
 .PHONY: test
