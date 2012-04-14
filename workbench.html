@@ -221,7 +221,7 @@
           <button id='stop'>stop</button>
           <button id='step'>step</button>
           <button id='reset'>reset</button>
-          <button id='about' style='float:right'>about</button>
+          <button id='about' style='float:right'>help about</button>
           <button id='settings' style='float:right' >settings</button>
         </td>
       </tr>
@@ -261,6 +261,8 @@
 	      <span class="ui-icon ui-icon-newwin"></span>Source at GitHub</a>
         <a href='https://github.com/whoatemydomain/js-dcpu16_workbench/wiki/Quick-Start' target='_blank' id="dialog_link" class="ui-state-default ui-corner-all">
 		  <span class="ui-icon ui-icon-newwin"></span>Quick Start</a>
+        <a href='https://github.com/whoatemydomain/js-dcpu16_workbench/issues' target='_blank' id="dialog_link" class="ui-state-default ui-corner-all">
+		  <span class="ui-icon ui-icon-newwin"></span>Issues</a>
       </p>
 	
     </div>
@@ -311,9 +313,9 @@
       width: 600,
       height: 300,
       modal: true,
-      title : 'Load',
+      title : 'load',
       buttons: {
-        "Ok": function() { 
+        "ok": function() { 
           var key = $('#code_list').find('.selected').attr('id');
           if(typeof(key) != 'undefined') { 
             var keyParts = codestore.splitKey(key);
@@ -325,7 +327,7 @@
           }
           $(this).dialog("close"); 
         }, 
-        "Cancel": function() { 
+        "cancel": function() { 
           $(this).dialog("close"); 
         } 
       }
@@ -358,9 +360,9 @@
       autoOpen: false,
       width: 600,
       modal: true,
-      title : 'Settings',
+      title : 'settings',
       buttons: {
-        "Ok": function() { 
+        "ok": function() { 
           $(this).dialog("close"); 
           dbg.run_delay = $('#settings_run_delay').val();
           start_position = $('#settings_start_position').val();;
@@ -368,7 +370,7 @@
           codestore.save('settings','run_delay',dbg.run_delay);
           codestore.save('settings','start_position',start_position);
         }, 
-        "Cancel": function() { 
+        "cancel": function() { 
           $(this).dialog("close"); 
         } 
       }
@@ -381,8 +383,8 @@
     });
     
     $('#about_dialog').dialog({
-      autoOpen: false, width: 600, modal: true, title : 'About',
-      buttons: { "Ok": function() { $(this).dialog("close"); }, }
+      autoOpen: false, width: 600, modal: true, title : 'help about',
+      buttons: { "ok": function() { $(this).dialog("close"); }, }
     });
     $('#about').click(function(){ $('#about_dialog').dialog('open'); return false; });
 
@@ -396,9 +398,9 @@
     var code_label='';
     var pending_changes=false;
     $('#new_dialog').dialog({
-      autoOpen: false, width: 600, modal: true, title : 'New',
+      autoOpen: false, width: 600, modal: true, title : 'new',
       buttons: {
-        "Ok": function() { 
+        "ok": function() { 
           $(this).dialog("close"); 
           code_label = $('#new_name').val();
           pending_changes = false;
@@ -408,7 +410,7 @@
           $('#source').val('');
           handle_code_change();
         }, 
-        "Cancel": function() { $(this).dialog("close"); } 
+        "cancel": function() { $(this).dialog("close"); } 
       }
     });
     $('#new').click(function(){ $('#new_dialog').dialog('open'); return false; });
@@ -416,7 +418,7 @@
     $('#saveas_dialog').dialog({
       autoOpen: false, width: 600, modal: true, title : 'Save As',
       buttons: {
-        "Ok": function() { 
+        "ok": function() { 
           $(this).dialog("close"); 
           code_label = $('#saveas_name').val();
           pending_changes = true;
@@ -425,7 +427,7 @@
           codestore.save('code',code_label,$('#source').val());
           handle_code_change();
         }, 
-        "Cancel": function() { $(this).dialog("close"); } 
+        "cancel": function() { $(this).dialog("close"); } 
       }
     });
     $('#saveas').click(function(){ $('#saveas_dialog').dialog('open'); return false; });
