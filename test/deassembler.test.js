@@ -58,6 +58,16 @@ module.exports = {
     assert.equal(code,target_code);
     assert.equal(2,deassembly.lines[0].byte_code.length);
   }, 
+  'test deassembler [nw+A]' : function() { 
+    var orig_code = 'SET X,[0x40+J]\n';
+    var target_code = 'SET X,[0x40+J]\n';
+    var assembly = assembler.assemble(orig_code);
+    var byte_code = assembly.byte_code;
+    var labels = assembly.labels;
+    var deassembly = deassembler.deassemble(byte_code,labels);
+    var code = deassembly.source;
+    assert.equal(code,target_code);
+  }, 
 
   
 }
