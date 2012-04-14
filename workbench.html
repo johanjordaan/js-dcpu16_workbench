@@ -36,6 +36,17 @@
       right: 0;
       z-index: 2;
     }
+	
+	
+			/*demo page css*/
+			body{ font: 62.5% "Trebuchet MS", sans-serif; margin: 50px;}
+			.demoHeaders { margin-top: 2em; }
+			#dialog_link {padding: .4em 1em .4em 20px;text-decoration: none;position: relative;}
+			#dialog_link span.ui-icon {margin: 0 5px 0 0;position: absolute;left: .2em;top: 50%;margin-top: -8px;}
+			ul#icons {margin: 0; padding: 0;}
+			ul#icons li {margin: 2px; position: relative; padding: 4px 0; cursor: pointer; float: left;  list-style: none;}
+			ul#icons span.ui-icon {float: left; margin: 0 4px;}
+		
   </style>
 
 
@@ -196,11 +207,11 @@
 		</a>
   
     <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix" style="height:50px">
-      <div class="ui-dialog-title ui-dialog-titlebar ui-dialog">DCPU-16 Workbench</div>
+      <div class="ui-dialog-title ui-dialog-titlebar ui-dialog">DCPU-16 Workbench (version:dev)</div>
     </div>
     <table style="width:100%;height:100%">
       <tr>
-        <td colspan='3' style='padding-right:150px'>
+        <td colspan='3' style='padding-right:100px'>
           <button id='new'>new</button>
           <button id='save'>save</button>
           <button id='saveas'>save as</button>
@@ -245,16 +256,13 @@
       <div id='code_list'></div>
     </div>
     <div id='about_dialog'>
-      Find the source here : <a href='https://github.com/whoatemydomain/js-0x10c'>github</a>
-      <ul>
-        <li> Show memory and register changes from the last instruction in another color. </li>
-        <li> Do dynamic memory deassembly to handle self-modifying code. </li>
-        <li> Finish ability to load to specific memory locations. </li>
-        <li> Add some propper error handling. </li>
-        <li> Add memory mapped devices like a screen. </li>
-        <li> Allow memory views. </li>
-        <li> Impliment propper instruction as a preprocessor ... INC, MOV, AX,BX etc</li>
-      </ul>
+	  <p>
+        <a href='https://github.com/whoatemydomain/js-dcpu16_workbench' target='_blank' id="dialog_link" class="ui-state-default ui-corner-all">
+	      <span class="ui-icon ui-icon-newwin"></span>Source at GitHub</a>
+        <a href='https://github.com/whoatemydomain/js-dcpu16_workbench/wiki/Quick-Start' target='_blank' id="dialog_link" class="ui-state-default ui-corner-all">
+		  <span class="ui-icon ui-icon-newwin"></span>Quick Start</a>
+      </p>
+	
     </div>
     
     <div id='settings_dialog'>

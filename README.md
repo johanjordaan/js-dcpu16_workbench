@@ -1,21 +1,27 @@
 js-dcpu16_workbench 
 ====================
-A live version of the workbench is hosted [here](http://dcpu16_workbench.whoatemydomain.co.za).
+A live version of the workbench is hosted [here](http://js-dcpu16_workbench.whoatemydomain.co.za).
 
 The Trello board for this project can be found [here](https://trello.com/board/js-dcpu16-workbench/4f8913a546db375633729d7b)
 
+Features
+-----------------------------
+* Code Save and Load
+* Breakpoints
+
+
 Installing
 -----------------------------
-npm install -d
-npm install mocha -g
-npm install uglify-js -g
+* npm install -d
+* npm install mocha -g
+* npm install uglify-js -g
 
 Dependencies
 -----------------------------
-ejs			- Template rednering
-mocha		- Test running
-node		- Not really needed :)
-uglify-js	- Minimise the js
+* ejs			- Template rednering
+* mocha		- Test running
+* node		- Not really needed :)
+* uglify-js	- Minimise the js
 
 
 The make commands
