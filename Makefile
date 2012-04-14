@@ -1,22 +1,34 @@
-SRC = $(shell find lib -name "*.js" -type f)
+LIB = $(shell ls -l lib/*.js | awk -F '/' '{print "lib_min/"$$NF}')
 UGLIFY_FLAGS = --no-mangle 
 
-all: ejs.min.js
+all: test minify package
+
+clean:
+	@rm -rf lib_min
+	@rm -rf js-dcpu16_workbench
+	@rm -f test/assembler.test.gen.js
+	@rm -f test/*.dat
 
 test: clean
 	@node test/generate_testcases.js 
 	@mocha --ui exports
 
-ejs.js: $(SRC)
-	@node support/compile.js $^
+lib_min/%.js: lib/%.js
+	@uglifyjs $< > $@ \
 
-ejs.min.js: ejs.js
-	@uglifyjs $(UGLIFY_FLAGS) $< > $@ \
-		&& du ejs.min.js \
-		&& du ejs.js
-
-clean:
-	@rm -f test/assembler.test.gen.js
-	@rm -f test/*.dat
+init_minify:
+	@mkdir lib_min -p	
+	
+minify: init_minify $(LIB)
+	
+package: minify
+	@mkdir js-dcpu16_workbench -p 
+	@mkdir js-dcpu16_workbench/js -p 
+	@mkdir js-dcpu16_workbench/lib -p 
+	@cp lib_min/*.js js-dcpu16_workbench/lib/ 
+	@cp js/*.js js-dcpu16_workbench/js/
+	@cp workbench.html js-dcpu16_workbench/index.html
+	@cp -r style js-dcpu16_workbench/style
+	@tar czf js-dcpu16_workbench.tar.gz js-dcpu16_workbench
 
 .PHONY: test

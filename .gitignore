@@ -1,3 +1,6 @@
 node_modules
 test/*.dat
 test/assembler.test.gen.js
+lib_min
+package
+*.tar.gz

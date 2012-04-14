@@ -1,6 +1,8 @@
-js-dcpu_16 Workbench 
+js-dcpu16_workbench 
 ====================
 A live version of the workbench is hosted [here](http://dcpu16_workbench.whoatemydomain.co.za).
+
+The Trello board for this project can be found [here](https://trello.com/board/js-dcpu16-workbench/4f8913a546db375633729d7b)
 
 Installing
 -----------------------------
@@ -8,10 +10,20 @@ npm install -d
 npm install mocha -g
 npm install uglify-js -g
 
-
-Running the tests
+Dependencies
 -----------------------------
-make test
+ejs			- Template rednering
+mocha		- Test running
+node		- Not really needed :)
+uglify-js	- Minimise the js
+
+
+The make commands
+-----------------------------
+make       - Runs the tests and builds a deployable tgz.
+make test  - Runs the tests.
+make clean - Removes any of the intermediate build files. 
+
 
 
 
