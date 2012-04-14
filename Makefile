@@ -1,6 +1,6 @@
 LIB = $(shell ls -l lib/*.js | awk -F '/' '{print "lib_min/"$$NF}')
 UGLIFY_FLAGS = --no-mangle 
-VERSION = 'v0.3'
+VERSION = 'v0.4'
 
 all: test minify package
 
