@@ -63,7 +63,7 @@ module.exports = {
   }, 
   
   'test assembler labels ref' : function() { 
-    var code = 'xxx: SET PC,xxx ;This is my comment';
+    var code = ':xxx SET PC,xxx ;This is my comment';
     var byte_code = assembler.assemble(code).byte_code;
     var byte_code_string = [];
     for(var j=0;j<byte_code.length;j++) 
@@ -90,7 +90,7 @@ module.exports = {
     assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code_string);
   },
   'test assembler jsr mem lookup label' : function() { 
-    var code = 'JSR [func]\nfunc: SET A,0x10';
+    var code = 'JSR [func]\n:func SET A,0x10';
     var byte_code = assembler.assemble(code).byte_code;
     var byte_code_string = byte_array_to_string(byte_code);
     var target_byte_code = [0x7810,0x0002,0xc001];
@@ -98,24 +98,17 @@ module.exports = {
     
     assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code_string);
   },
+  'test assembler test non reffed label' : function() { 
+    var code = ':__main SET A,0x40';
+    var byte_code = assembler.assemble(code).byte_code;
+    var byte_code_string = byte_array_to_string(byte_code);
+    var target_byte_code = [0x7c01,0x0040];
+    var target_byte_code_string = byte_array_to_string(target_byte_code);
+    
+    assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code_string);
+  },
 
   
-/*  'test assembler labels ref lookup' : function() { 
-    var code = 'xxx: SET PC,[xxx]';
-    var byte_code = assembler.assemble(code).byte_code;
-    var byte_code_string = [];
-    for(var j=0;j<byte_code.length;j++) 
-      byte_code_string.push(byte_code[j].toString(16));
-    var target_byte_code = [0x79c1,0x0000];
-    assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code);
-  }, 
-  'test assembler debug' : function() {
-    var code = 'SET  A, [0x10]\nSET PC , 0 ';
-    var debug_info = assembler.assemble(code).debug_info;
-    assert.equal(2,debug_info.length);
-    assert.equal('SET A,[0x10]',debug_info[0].code);
-    assert.equal('SET PC,0',debug_info[1].code);
-  },
-*/
+  
 }
 
