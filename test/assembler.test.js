@@ -108,6 +108,16 @@ module.exports = {
     assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code_string);
   },
 
+  'test assembler test label alone line' : function() { 
+    var code = ':__main\n SET A,0x40';
+    var byte_code = assembler.assemble(code).byte_code;
+    var byte_code_string = byte_array_to_string(byte_code);
+    var target_byte_code = [0x7c01,0x0040];
+    var target_byte_code_string = byte_array_to_string(target_byte_code);
+    
+    assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code_string);
+  },
+
   
   
 }
