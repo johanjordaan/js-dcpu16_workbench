@@ -98,7 +98,8 @@ module.exports = {
   },
   'test assembler jsr mem lookup label' : function() { 
     var code = 'JSR [func]\n:func SET A,0x10';
-    var byte_code = assembler.assemble(code).byte_code;
+    var assembly = assembler.assemble(code);
+    var byte_code = assembly.byte_code;
     var byte_code_string = byte_array_to_string(byte_code);
     var target_byte_code = [0x7810,0x0002,0xc001];
     var target_byte_code_string = byte_array_to_string(target_byte_code);

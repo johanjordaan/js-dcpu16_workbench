@@ -23,22 +23,21 @@ module.exports = {
     var code = deassembler.deassemble(byte_code).source;
     assert.equal(code,orig_code);
   }, 
-  'test deassembler labels' : function() { 
+  'test deassembler label used after define' : function() { 
     var orig_code = ':loop ADD A,1\nSET PC,loop\n';
     var target_code = ':loop ADD A,1\nSET PC,loop\n';
-    var byte_code = assembler.assemble(orig_code).byte_code;
-    var labels = {0x0:'loop'};
-    var code = deassembler.deassemble(byte_code,labels).source;
+    var assembly = assembler.assemble(orig_code)
+    var code = deassembler.deassemble(assembly.byte_code,assembly.labels).source;    
     assert.equal(code,target_code);
   }, 
-  'test deassembler labels2' : function() { 
+  'test deassembler labels defined after use' : function() { 
     var orig_code = 'SET [data],0x40\n:data SET [0x40],[0x40]\n';
     var target_code = 'SET [data],0x40\n:data SET [0x40],[0x40]\n';
     var assembly = assembler.assemble(orig_code)
     var code = deassembler.deassemble(assembly.byte_code,assembly.labels).source;
     assert.equal(code,target_code);
   }, 
-  'test deassembler labels' : function() { 
+  'test deassembler labels mem ref' : function() { 
     var orig_code = 'SET PC,data\n:data SET [0x33],[0x33]\n';
     var target_code = 'SET PC,data\n:data SET [0x33],[0x33]\n';
     var assembly = assembler.assemble(orig_code);
