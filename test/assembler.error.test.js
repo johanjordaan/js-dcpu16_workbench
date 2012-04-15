@@ -65,7 +65,5 @@ module.exports = {
     assert.equal(1,assembly.errors[0].line);
     assert.equal(2,assembly.errors[1].line);
   }
-
-  
 }
 

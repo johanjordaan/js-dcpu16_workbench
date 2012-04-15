@@ -66,6 +66,20 @@
     
     <script src="lib/cpu_view.js"></script> 
 
+    <script type="text/template" id="error_list_template">
+      <table id='code_list' cellspacing=0 width="100%">
+        <% for(var i=0;i<errors.length;i++) { %>
+        <% var error = errors[i] %>
+          <tr>
+            <td><%= error.line %></td>
+            <td><%= error.type %></td>
+            <td><%= error.msg %></td>
+          </tr>
+        <% } %>
+      </table>
+    </script>
+
+
     <script type="text/template" id="code_list_template">
       <table id='code_list' cellspacing=0 width="100%">
         <% for(var i=0;i<codes.length;i++) { %>
@@ -147,12 +161,16 @@
       var start_position = 0;
       
       var show_debugger = function() {
-        $('#debugger').html(ejs.render($('#debugger_template').html(),{lines:dbg.deassembly.lines,breakpoints:dbg.breakpoints}));
-        $('#debugger_source').find('tr#'+dbg.current_line).css('backgroundColor', 'wheat');
-        $('td.breakpoint').click( function() {
-          $(this).children('span').toggleClass('ui-icon').toggleClass('ui-icon-star');
-          dbg.toggle_breakpoint(this.id);
-        });
+        if(dbg.assembly.errors.length>0) {
+          $('#debugger').html(ejs.render($('#error_list_template').html(),{errors:dbg.assembly.errors}));          
+        } else {
+          $('#debugger').html(ejs.render($('#debugger_template').html(),{lines:dbg.deassembly.lines,breakpoints:dbg.breakpoints}));
+          $('#debugger_source').find('tr#'+dbg.current_line).css('backgroundColor', 'wheat');
+          $('td.breakpoint').click( function() {
+            $(this).children('span').toggleClass('ui-icon').toggleClass('ui-icon-star');
+            dbg.toggle_breakpoint(this.id);
+          });
+        }
       };
    
       $( function() {
