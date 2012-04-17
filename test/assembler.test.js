@@ -162,7 +162,12 @@ module.exports = {
   'test assembler test [nw+J] with label ' : function() { 
     var code = 'SET [_i],[_lll+J]\n:_i DAT 0xFF\n:_lll DAT 0xFF';
     var target_byte_code = [0x5de1,0x0003,0x0004,0x00FF,0x00FF];
-	run_assembler_test_case(code,target_byte_code);
+    run_assembler_test_case(code,target_byte_code);
+  },
+  'test assembler test DAT with multiple values' : function() { 
+    var code = 'DAT 0x40,0x50,0x60';
+    var target_byte_code = [0x0040,0x0050,0x0060];
+    run_assembler_test_case(code,target_byte_code);
   },
   
   

@@ -32,12 +32,6 @@ module.exports = {
 
   },
   'test assembler valid command to many parameters ' : function() { 
-    var code = ';Some comment\nDAT 0x50,0x50'
-    var assembly = assembler.assemble(code);
-    assert.equal(1,assembly.errors.length);
-    assert.equal('WARNING',assembly.errors[0].type);
-    assert.equal(1,assembly.errors[0].line);
-    
     var code = 'SET A, 0x10,44'
     var assembly = assembler.assemble(code);
     assert.equal(1,assembly.errors.length);
