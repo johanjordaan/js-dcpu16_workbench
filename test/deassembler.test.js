@@ -67,6 +67,15 @@ module.exports = {
     var code = deassembly.source;
     assert.equal(code,target_code);
   }, 
+  'test deassembler DAT 0 with another DAT following it' : function() { 
+    var orig_code = 'DAT 0\nDAT 1\n';
+    var target_code = 'DAT 0x0\nSET A,A\n';
+    var assembly = assembler.assemble(orig_code);
+    var byte_code = assembly.byte_code;
+    var deassembly = deassembler.deassemble(byte_code,assembly.labels);
+    var code = deassembly.source;
+    assert.equal(code,target_code);
+  }, 
 
   
 }
