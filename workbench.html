@@ -30,6 +30,10 @@
     .selected {
       background:wheat;
     }
+    .current_pc {
+      background:wheat;
+    }
+
     #ribbon {
       position: fixed;
       top: 0;
@@ -47,6 +51,10 @@
 			ul#icons li {margin: 2px; position: relative; padding: 4px 0; cursor: pointer; float: left;  list-style: none;}
 			ul#icons span.ui-icon {float: left; margin: 0 4px;}
 		
+    .memory_changed {
+      background:orange;
+    }
+    
   </style>
 
 
@@ -67,7 +75,7 @@
     <script src="lib/cpu_view.js"></script> 
 
     <script type="text/template" id="error_list_template">
-      <table id='code_list' cellspacing=0 width="100%">
+      <table id='error_list' cellspacing=0 width="100%">
         <% for(var i=0;i<errors.length;i++) { %>
         <% var error = errors[i] %>
           <tr>
@@ -136,7 +144,7 @@
           <td></td>
         </tr>
       </table>
-      <table>
+      <table id="memory">
         <tr>
           <td colspan='9'></td>
         </td>
@@ -146,9 +154,9 @@
           <% for(var c=0;c<8;c++) { %>
             <% var cur_index = (r*8)+c %>
             <% if(cur_index == cpu.pc) { %>
-              <td id='current_pc' class='memory_cell'><%= zero_fill(cpu.memory[cur_index].toString(16),4) %></td>
+              <td id='<%= cur_index %>' class='memory_cell current_pc'><%= zero_fill(cpu.memory[cur_index].toString(16),4) %></td>
             <% } else { %>
-              <td class='memory_cell'><%= zero_fill(cpu.memory[cur_index].toString(16),4) %></td>
+              <td id='<%= cur_index %>' class='memory_cell'><%= zero_fill(cpu.memory[cur_index].toString(16),4) %></td>
             <% } %>
           <% } %>
         </tr>

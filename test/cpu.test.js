@@ -28,5 +28,29 @@ module.exports = {
     dbg.step();
     assert.equal(0xFC,dbg.cpu.memory[0x40]);
   },
+  'test memory delta' : function() { 
+    var code = 'SET [0x10],0x40\nSET [0x20],0x04\nSET [0x50],0x55]\nSET [0x44],0x44';
+    var cpu = new CPU.CPU();
+    var dbg = new Debugger.Debugger(cpu);
+    dbg.load(0,code);
+    dbg.step();
+    assert.equal(1,dbg.cpu.memory_changes.length);
+    assert.equal(0x10,dbg.cpu.memory_changes[0]);
+    dbg.step();
+    assert.equal(2,dbg.cpu.memory_changes.length);
+    assert.equal(0x20,dbg.cpu.memory_changes[0]);
+    assert.equal(0x10,dbg.cpu.memory_changes[1]);
+    dbg.step();
+    assert.equal(3,dbg.cpu.memory_changes.length);
+    assert.equal(0x50,dbg.cpu.memory_changes[0]);
+    dbg.step();
+    assert.equal(3,dbg.cpu.memory_changes.length);
+    assert.equal(0x44,dbg.cpu.memory_changes[0]);
+    assert.equal(0x50,dbg.cpu.memory_changes[1]);
+    assert.equal(0x20,dbg.cpu.memory_changes[2]);
+    dbg.reset();    
+    assert.equal(0,dbg.cpu.memory_changes.length);
+  }, 
+
 }
 
