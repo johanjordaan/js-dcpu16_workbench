@@ -128,36 +128,28 @@ module.exports = {
 
   'test assembler test DAT' : function() { 
     var code = 'DAT 0x40';
-    var byte_code = assembler.assemble(code).byte_code;
-    var byte_code_string = byte_array_to_string(byte_code);
     var target_byte_code = [0x0040];
-    var target_byte_code_string = byte_array_to_string(target_byte_code);
-    
-    assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code_string);
+    run_assembler_test_case(code,target_byte_code);
   },
   'test assembler test DAT with label' : function() { 
     var code = '  	SET A,[DAT]\n:DAT	DAT 0x40';
-    var byte_code = assembler.assemble(code).byte_code;
-    var byte_code_string = byte_array_to_string(byte_code);
     var target_byte_code = [0x7801,0x0002,0x0040];
-    var target_byte_code_string = byte_array_to_string(target_byte_code);
-    
-    assert.ok(check_byte_code(target_byte_code,byte_code),'\n'+code+'\nIs : '+byte_code_string+' Should Be : '+target_byte_code_string);
+    run_assembler_test_case(code,target_byte_code);
   },
   'test assembler test single ' : function() { 
     var code = '  JSR _main\n:__crash\nSET PC, __crash\n:_main';
     var target_byte_code = [0x7c10,0x0004,0x7dc1,0x0002];
-	run_assembler_test_case(code,target_byte_code);
+    run_assembler_test_case(code,target_byte_code);
   },
   'test assembler test single tab ' : function() { 
     var code = '  JSR  \t _main\n:__crash\nSET PC,\t __crash\n\t :_main';
     var target_byte_code = [0x7c10,0x0004,0x7dc1,0x0002];
-	run_assembler_test_case(code,target_byte_code);
+    run_assembler_test_case(code,target_byte_code);
   },
   'test assembler test single tab ' : function() { 
     var code = 'SET A,[0x30+B]';
     var target_byte_code = [0x4401,0x0030];
-	run_assembler_test_case(code,target_byte_code);
+    run_assembler_test_case(code,target_byte_code);
   },
   'test assembler test [nw+J] with label ' : function() { 
     var code = 'SET [_i],[_lll+J]\n:_i DAT 0xFF\n:_lll DAT 0xFF';
@@ -165,14 +157,14 @@ module.exports = {
     run_assembler_test_case(code,target_byte_code);
   },
   'test assembler test DAT with multiple values' : function() { 
-    var code = 'DAT 0x40,0x50,0x60';
+    var code = 'DAT 0x40, 0x50, 0x60  ';
     var target_byte_code = [0x0040,0x0050,0x0060];
     run_assembler_test_case(code,target_byte_code);
   },
-  
-  
-
-  
-  
+  'test assembler test DAT with string values' : function() { 
+    var code = 'DAT 0x170, "Abc ", 0x60  ';
+    var target_byte_code = [0x0170,0x0041,0x0062,0x0063,0x0020,0x0060];
+    run_assembler_test_case(code,target_byte_code);
+  },
 }
 
