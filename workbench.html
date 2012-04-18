@@ -2,6 +2,7 @@
 <html>
   <head>
   <title>DCPU16 Workbench (version:dev)</title>
+  
   <style type="text/css">
     .code {
       font-family: Courier New;
@@ -71,9 +72,11 @@
     <script src="lib/deassembler.js"></script> 
     <script src="lib/debugger.js"></script> 
     <script src="lib/codestore.js"></script> 
-    
     <script src="lib/cpu_view.js"></script> 
+    <script src="lib/dyno_edit.js"></script> 
 
+    
+    
     <script type="text/template" id="error_list_template">
       <table id='error_list' cellspacing=0 width="100%">
         <% for(var i=0;i<errors.length;i++) { %>
@@ -124,7 +127,7 @@
     <script type="text/template" id="cpu_template">
       <table>
         <tr>
-          <td class="register_label">PC:</td><td class="register_value"><%= zero_fill(cpu.pc.toString(16),4) %></td>
+          <td class="register_label">PC:</td><td class="register_value dyno_register" id="PC"><%= zero_fill(cpu.pc.toString(16),4) %></td>
           <td class="register_label">SP:</td><td class="register_value"><%= zero_fill(cpu.sp.toString(16),4) %></td>
           <td class="register_label">Cycle:</td><td class="register_value"><%= zero_fill(cpu.cycle,4) %></td>
         </tr>
@@ -146,7 +149,7 @@
       </table>
       <table id="memory">
         <tr>
-          <td colspan='9'></td>
+          <td colspan='9'><input id='memory_offset'/></td>
         </td>
         <% for(var r=0;r<20;r++) { %>
         <tr>
@@ -179,6 +182,18 @@
             dbg.toggle_breakpoint(this.id);
           });
         }
+
+        $('.dyno_register').click(dyno(function(id,val) { 
+          if(id == 'PC') 
+            dbg.cpu.pc = parseInt(val);
+          else
+            dbg.cpu.registers[id] = parseInt(val);
+          
+          show_cpu();
+          show_debugger();
+        }));
+
+        
       };
    
       $( function() {
@@ -228,7 +243,19 @@
  
   </head>
   <body>
-    <a href="http://github.com/whoatemydomain/js-dcpu16_workbench"> 
+    <div id="fb-root"></div>
+      <script>(function(d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s); js.id = id;
+        js.src = "http://connect.facebook.net/en_US/all.js#xfbml=1";
+        fjs.parentNode.insertBefore(js, fjs);
+      }(document, 'script', 'facebook-jssdk'));
+    </script>
+  
+
+
+  <a href="http://github.com/whoatemydomain/js-dcpu16_workbench"> 
 		  <img alt="Fork me on GitHub" id="ribbon" src="http://s3.amazonaws.com/github/ribbons/forkme_right_white_ffffff.png"> 
 		</a>
   
@@ -252,7 +279,7 @@
         </td>
       </tr>
       <tr>
-        <td width="400px" valign="top" class='code'>
+        <td width="50%" valign="top" class='code'>
           <table style="width:100%;height:100%">
             <tr valign='top' style='height:0'>
               <td><input type='text' id='source_label' style='width:100%' disabled></input></td>
@@ -263,10 +290,10 @@
           </table>
         </td>
 
-        <td width="450px" valign="top">
+        <td width="50%" valign="top">
           <div id="debugger"></div>
         </td>
-        <td>
+        <td align="right">
           <table>
             <tr>
               <td>
@@ -276,6 +303,9 @@
           </table>
         </td>
       </tr>
+      <tr> <td>
+        <div class="fb-like" data-href="http://dcpu16_workbench.whoatemydomain.co.za//" data-send="true" data-width="450" data-show-faces="false"></div>
+      </td></tr>
     </table>
 
     <div id='load_dialog'>
