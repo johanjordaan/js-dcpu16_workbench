@@ -76,7 +76,6 @@
     <script src="lib/dyno_edit.js"></script> 
 
     
-    
     <script type="text/template" id="error_list_template">
       <table id='error_list' cellspacing=0 width="100%">
         <% for(var i=0;i<errors.length;i++) { %>
@@ -170,6 +169,7 @@
     <script>
       var dbg = new Debugger();
       var start_position = 0;
+      
       
       var show_debugger = function() {
         if(dbg.assembly.errors.length>0) {
@@ -285,7 +285,7 @@
               <td><input type='text' id='source_label' style='width:100%' disabled></input></td>
             </tr>
             <tr valign="top">
-              <td colspan='2'><textarea id='source' cols='80' wrap='off' style='width:100%;height:100%' disabled></textarea></td>
+              <td colspan='2'><textarea id='source' cols='80' wrap='off' style='width:100%;height:100%' class='CodeMirror-scroll cm-s-default'  disabled></textarea></td>
             </tr>
           </table>
         </td>
@@ -522,7 +522,6 @@
         return false;
     }
     });
-    
     
     
     

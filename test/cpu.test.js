@@ -52,12 +52,15 @@ module.exports = {
     assert.equal(0,dbg.cpu.memory_changes.length);
   },
   'test stack' : function() { 
-    var code = 'SET PUSH,0x40';
+    var code = 'SET PUSH,0x40\nSET PUSH,0x20\nSET PC,POP';
     var cpu = new CPU.CPU();
     var dbg = new Debugger.Debugger(cpu);
     dbg.load(0,code);
     dbg.step();
     assert.equal(0x40,dbg.cpu.get_memory(dbg.cpu.get_register('SP')));
+    dbg.step();
+    dbg.step();
+    assert.equal(0x20,dbg.cpu.get_register('PC'));
   }  
 
 }
