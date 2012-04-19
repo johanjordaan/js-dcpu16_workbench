@@ -141,13 +141,13 @@ module.exports = {
     var target_byte_code = [0x7c10,0x0004,0x7dc1,0x0002];
     run_assembler_test_case(code,target_byte_code);
   },
-  'test assembler test single tab ' : function() { 
-    var code = '  JSR  \t _main\n:__crash\nSET PC,\t __crash\n\t :_main';
+  'test assembler test multi tab ' : function() { 
+    var code = '  JSR  \t _main\n:__crash\n\tSET\tPC,\t __crash\n\t :_main';
     var target_byte_code = [0x7c10,0x0004,0x7dc1,0x0002];
     run_assembler_test_case(code,target_byte_code);
   },
   'test assembler test single tab ' : function() { 
-    var code = 'SET A,[0x30+B]';
+    var code = 'SET\t A,[0x30+B]';
     var target_byte_code = [0x4401,0x0030];
     run_assembler_test_case(code,target_byte_code);
   },
