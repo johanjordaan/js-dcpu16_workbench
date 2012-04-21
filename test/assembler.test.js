@@ -176,5 +176,11 @@ module.exports = {
     var target_byte_code = [0x7c01,0x0062];
     run_assembler_test_case(code,target_byte_code);
   },
+  'test assembler test [R+nw] ref ' : function() { 
+    var code = 'SET A,[B+0x30]';
+    var target_byte_code = [0x4401,0x0030];
+    run_assembler_test_case(code,target_byte_code);
+  },
+
 }
 
