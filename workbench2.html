@@ -5,12 +5,16 @@
     <title>DCPU16 Workbench2 (version:dev)</title>
  		<link type="text/css" href="style/css/ui-lightness/jquery-ui-1.8.18.custom.css" rel="stylesheet" />	
     <link type="text/css" href="style/css/style.css" rel="stylesheet" />	
-		<script type="text/javascript" src="js/jquery-1.7.1.min.js"></script>
+		<link type="text/css" href="js/codemirror/codemirror.css" rel="stylesheet" />	
+    <script type="text/javascript" src="js/jquery-1.7.1.min.js"></script>
 		<script type="text/javascript" src="style/js/jquery-ui-1.8.18.custom.min.js"></script>
     <script src="js/underscore-min.js"></script> 
     <script src="js/ejs.min.js"></script>
     <script src="js/backbone-min.js"></script>
-
+    
+    <script src="js/codemirror/codemirror.js"></script>
+    <script src="js/codemirror/dcpu_mode.js"></script>
+    
     
     <script src="lib/cpu_constants.js"></script> 
     <script src="lib/cpu.js"></script> 
@@ -18,16 +22,280 @@
     <script src="lib/deassembler.js"></script> 
     <script src="lib/debugger.js"></script> 
     <script src="lib/codestore.js"></script> 
-    <script src="lib/cpu_view.js"></script> 
     <script src="lib/dyno_edit.js"></script> 
 
     <script src="lib/screen.js"></script> 
     
     <script>
-      $(function() {
-        $('#tabs').tabs();
+      var ejs = require('ejs');
+      var cpu;
+      var dbg;
+      var main_screen,preview_screen;
+      var start_position;
+    
+      zero_fill = function( number, width ) {
+        width -= number.toString().length;
+        if ( width > 0 )
+        {
+          return new Array( width + (/\./.test( number ) ? 2 : 1) ).join( '0' ) + number;
+        }
+        return number;
+      }  
+
+      show_cpu = function() {
+        $('#cpu').html(ejs.render($('#cpu_template').html(),{cpu:dbg.cpu,memory_offset:0x8000}));
+        for(var i=0;i<dbg.cpu.memory_changes.length;i++) {
+          $('#memory').find('#'+dbg.cpu.memory_changes[i]+'.memory_cell').addClass('memory_changed');
+        }
+      }
+
+      show_debugger = function() {
+        if(dbg.assembly.errors.length>0) {
+          $('#debugger').html(ejs.render($('#error_list_template').html(),{errors:dbg.assembly.errors}));          
+        } else {
+          $('#debugger').html(ejs.render($('#debugger_template').html(),{lines:dbg.deassembly.lines,breakpoints:dbg.breakpoints}));
+          $('#debugger_source').find('tr#'+dbg.current_line).css('backgroundColor', 'wheat');
+          $('td.breakpoint').click( function() {
+            $(this).children('span').toggleClass('ui-icon').toggleClass('ui-icon-star');
+            dbg.toggle_breakpoint(this.id);
+          });
+        }
+      }
+      show_screen = function() {
+        main_screen.update();
+        preview_screen.update();
+      }
+
+    $(function() {
+      cpu = new CPU()
+      dbg = new Debugger(cpu);
+      preview_screen = new Screen(cpu,$('#preview_screen')[0],2);
+      main_screen = new Screen(cpu,$('#main_screen')[0],5);
+      start_position = 0;
+
+      var editor = CodeMirror.fromTextArea(document.getElementById("source"), {
+        lineNumbers: true,
+        tabSize: 4,
+        indentUnit: 4,
+        indentWithTabs: true,
+        mode: "dcpu"
       });
-    </script>
+
+      
+      
+      dbg.run_delay = codestore.loadInt('settings','run_delay',200);
+      start_position = codestore.loadInt('settings','start_position',0);
+      
+      
+      show_cpu();
+      show_screen();
+
+      $('#tabs').tabs();
+      $('button').button();
+
+      $('.dyno_register').click(dyno(function(id,val) { 
+        if(id == 'PC') 
+          dbg.cpu.pc = parseInt(val);
+        else
+          dbg.cpu.registers[id] = parseInt(val);
+        
+        show_cpu();
+        show_debugger();
+      }));
+      
+      $('#step').click( function() {
+        dbg.step();
+        show_cpu();
+        show_screen();
+        show_debugger();
+      });
+
+      $('#reset').click( function() {
+        dbg.reset();
+        show_cpu();
+        show_debugger();
+        show_screen();          
+      });
+        
+      $('#compile').click( function() {
+        dbg.load(start_position,editor.getValue());
+        $('#debugger_tab_tab').click();
+        show_cpu();
+        show_debugger();
+        show_screen();
+      });
+
+      $('#run').click( function() {
+        dbg.run(function() { show_cpu();show_debugger();show_screen(); });
+      });
+
+      $('#stop').click( function() {
+        dbg.pause();
+      });
+
+      $('#load_dialog').dialog({
+        autoOpen: false,
+        width: 600,
+        height: 300,
+        modal: true,
+        title : 'load',
+        buttons: {
+          "ok": function() { 
+            var key = $('#code_list').find('.selected').attr('id');
+            if(typeof(key) != 'undefined') { 
+              var keyParts = codestore.splitKey(key);
+              code_label = keyParts.key;  
+              editor.setValue(codestore.load(keyParts.table,keyParts.key,''));
+              $('#source').removeAttr('disabled');
+              pending_changes = false;
+              $('#source_label').val(code_label);
+            }
+            $(this).dialog("close"); 
+          }, 
+          "cancel": function() { 
+            $(this).dialog("close"); 
+          } 
+        }
+      });
+
+      var codes = [];
+      $('#load').click(function() {
+        codes = codestore.findKeys('code');
+        $('#code_list').html(ejs.render($('#code_list_template').html(),{codes:codes}));
+        $('#code_list').find('tr').click(function() { 
+          $('#code_list').find('tr').removeClass('selected');
+          $(this).toggleClass('selected'); 
+        });
+        $('.delete_code_button').click(function() { 
+          $('#code_list').find('tr').removeClass('selected');
+          var key = $(this).parent().parent().attr('id');
+          var keyParts = codestore.splitKey(key);
+          codestore.delete(key);
+          $(this).parent().parent().remove();
+          if(keyParts.key == code_label) {
+            pending_changes = true;
+            handle_code_changes();
+          }
+        });
+
+        $('#load_dialog').dialog('open');
+          return false;
+      });
+    
+      $('#settings_dialog').dialog({
+        autoOpen: false,
+        width: 600,
+        modal: true,
+        title : 'settings',
+        buttons: {
+          "ok": function() { 
+            $(this).dialog("close"); 
+            dbg.run_delay = $('#settings_run_delay').val();
+            start_position = $('#settings_start_position').val();;
+            
+            codestore.save('settings','run_delay',dbg.run_delay);
+            codestore.save('settings','start_position',start_position);
+          }, 
+          "cancel": function() { 
+            $(this).dialog("close"); 
+          } 
+        }
+      });
+
+      $('#settings').click(function(){
+        $('#settings_run_delay').val(dbg.run_delay);
+        $('#settings_start_position').val(start_position);
+        $('#settings_dialog').dialog('open');
+        return false;
+      });
+    
+      $('#about_dialog').dialog({
+        autoOpen: false, width: 600, modal: true, title : 'help about',
+        buttons: { "ok": function() { $(this).dialog("close"); }, }
+      });
+
+      $('#about').click(function(){ $('#about_dialog').dialog('open'); return false; });
+
+
+      handle_code_change = function() {
+        if(pending_changes) return;
+        pending_changes = true;
+        $('#source_label').val('*'+code_label);
+      }
+    
+      var code_label='';
+      var pending_changes=false;
+      $('#new_dialog').dialog({
+        autoOpen: false, width: 600, modal: true, title : 'new',
+        buttons: {
+          "ok": function() { 
+            $(this).dialog("close"); 
+            code_label = $('#new_name').val();
+            pending_changes = false;
+            $('#new_name').val('');
+            $('#source_label').val(code_label);
+            $('#source').removeAttr('disabled');
+            $('#source').val('');
+            handle_code_change();
+          }, 
+          "cancel": function() { $(this).dialog("close"); } 
+        }
+      });
+    
+      $('#new').click(function(){ $('#new_dialog').dialog('open'); return false; });
+
+      $('#saveas_dialog').dialog({
+        autoOpen: false, width: 600, modal: true, title : 'Save As',
+        buttons: {
+          "ok": function() { 
+            $(this).dialog("close"); 
+            code_label = $('#saveas_name').val();
+            pending_changes = true;
+            $('#saveas_name').val('');
+            $('#source_label').val(code_label);
+            codestore.save('code',code_label,$('#source').val());
+            handle_code_change();
+          }, 
+          "cancel": function() { $(this).dialog("close"); } 
+        }
+      });
+      $('#saveas').click(function(){ $('#saveas_dialog').dialog('open'); return false; });
+
+      $('#source').change( function() {
+        handle_code_change();
+      });
+  
+      $('#source').keypress( function() {
+        handle_code_change();
+      });
+      $('#save').click( function() {
+        pending_changes = false;
+        $('#source_label').val(code_label);
+        codestore.save('code',code_label,$('#source').val());
+      });
+      $('#source').keydown( function(e) {
+        if(e.keyCode === 9) { // tab was pressed
+          // get caret position/selection
+          var start = this.selectionStart;
+              end = this.selectionEnd;
+
+          var $this = $(this);
+
+          // set textarea value to: text before caret + tab + text after caret
+          $this.val($this.val().substring(0, start)
+                      + "\t"
+                      + $this.val().substring(end));
+
+          // put caret at right position again
+          this.selectionStart = this.selectionEnd = start + 1;
+
+          // prevent the focus lose
+          return false;
+        }
+      });
+      
+    });
+  </script>
   
     <script type="text/template" id="error_list_template">
       <table id='error_list' cellspacing=0 width="100%">
@@ -118,75 +386,6 @@
       </table>
     </script>
 
-    <script>
-      var dbg = new Debugger();
-      var start_position = 0;
-      
-      
-      var show_debugger = function() {
-        if(dbg.assembly.errors.length>0) {
-          $('#debugger').html(ejs.render($('#error_list_template').html(),{errors:dbg.assembly.errors}));          
-        } else {
-          $('#debugger').html(ejs.render($('#debugger_template').html(),{lines:dbg.deassembly.lines,breakpoints:dbg.breakpoints}));
-          $('#debugger_source').find('tr#'+dbg.current_line).css('backgroundColor', 'wheat');
-          $('td.breakpoint').click( function() {
-            $(this).children('span').toggleClass('ui-icon').toggleClass('ui-icon-star');
-            dbg.toggle_breakpoint(this.id);
-          });
-        }
-
-        $('.dyno_register').click(dyno(function(id,val) { 
-          if(id == 'PC') 
-            dbg.cpu.pc = parseInt(val);
-          else
-            dbg.cpu.registers[id] = parseInt(val);
-          
-          show_cpu();
-          show_debugger();
-        }));
-
-        
-      };
-   
-      show_screen = function() {
-        update_screen($('#preview_screen')[0],dbg.cpu.memory.slice(0x8000,0x8000+180),dbg.cpu.memory.slice(0x8180,0x8180+(256*2)),3);
-      };
-   
-      $( function() {
-        show_cpu();
-        show_screen();
-        
-        $('#step').click( function() {
-          dbg.step();
-          show_cpu();
-          show_screen();
-          show_debugger();
-        });
-
-        $('#reset').click( function() {
-          dbg.reset();
-          show_cpu();
-          show_debugger();
-          show_screen();          
-        });
-        
-        $('#compile').click( function() {
-          dbg.load(start_position,$('#source').val());
-          $('#debugger_tab_tab').click();
-          show_cpu();
-          show_debugger();
-          show_screen();
-        });
-
-        $('#run').click( function() {
-          dbg.run(function() { show_cpu();show_debugger();show_screen(); });
-        });
-
-        $('#stop').click( function() {
-          dbg.pause();
-        });
-      });
-    </script>
  
     <script type="text/javascript">
 
@@ -210,10 +409,6 @@
 		</a>
   
     <p>
-      <a href="#" id="new" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>new</a>
-      <a href="#" id="save" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>save</a>
-      <a href="#" id="save as" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>save as</a>
-      <a href="#" id="load" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>load</a>
       <a href="#" id="compile" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>compile</a>
       <a href="#" id="about"  style='float:right' class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>about</a>
       <a href="#" id="settings"  style='float:right' class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>settings</a>
@@ -226,6 +421,12 @@
         <li><a href="#output_tab">output</a></li>
 			</ul>
 			<div id="editor_tab">
+        <p>
+          <a href="#" id="new" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>new</a>
+          <a href="#" id="save" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>save</a>
+          <a href="#" id="save as" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>save as</a>
+          <a href="#" id="load" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>load</a>
+        </p>
         <table style="width:100%;height:100%">
           <tr valign='top' style='height:0'>
             <td><input type='text' id='source_label' style='width:100%' disabled></input></td>
@@ -236,7 +437,18 @@
         </table>
       </div>
       <div id="output_tab">
-        <canvas id="screen" width="420" height="320"></canvas>
+        <p>
+          <a href="#" id="run" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-play"></span>run</a>
+          <a href="#" id="stop" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-pause"></span>stop</a>
+          <a href="#" id="reset" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-refresh"></span>reset</a>
+        </p>
+        <table>
+          <tr>
+            <td valign="center">
+              <canvas id="main_screen" width="420" height="320"></canvas>
+            </td>
+          </tr>
+        </table>
       </div>
 			<div id="debugger_tab">
         <p>
@@ -317,173 +529,6 @@
     
   </body>
   
-    <script>
-    dbg.run_delay = codestore.loadInt('settings','run_delay',200);
-    start_position = codestore.loadInt('settings','start_position',0);
-        
-  
-    $('button').button();
-    $('#tabs').tabs();
-    $('#load_dialog').dialog({
-      autoOpen: false,
-      width: 600,
-      height: 300,
-      modal: true,
-      title : 'load',
-      buttons: {
-        "ok": function() { 
-          var key = $('#code_list').find('.selected').attr('id');
-          if(typeof(key) != 'undefined') { 
-            var keyParts = codestore.splitKey(key);
-            code_label = keyParts.key;  
-            $('#source').val(codestore.load(keyParts.table,keyParts.key,''));
-            $('#source').removeAttr('disabled');
-            pending_changes = false;
-            $('#source_label').val(code_label);
-          }
-          $(this).dialog("close"); 
-        }, 
-        "cancel": function() { 
-          $(this).dialog("close"); 
-        } 
-      }
-    });
-    var codes = [];
-    $('#load').click(function() {
-      codes = codestore.findKeys('code');
-      $('#code_list').html(ejs.render($('#code_list_template').html(),{codes:codes}));
-      $('#code_list').find('tr').click(function() { 
-        $('#code_list').find('tr').removeClass('selected');
-        $(this).toggleClass('selected'); 
-      });
-      $('.delete_code_button').click(function() { 
-        $('#code_list').find('tr').removeClass('selected');
-        var key = $(this).parent().parent().attr('id');
-        var keyParts = codestore.splitKey(key);
-        codestore.delete(key);
-        $(this).parent().parent().remove();
-        if(keyParts.key == code_label) {
-          pending_changes = true;
-          handle_code_changes();
-        }
-      });
-
-      $('#load_dialog').dialog('open');
-      return false;
-    });
-    
-    $('#settings_dialog').dialog({
-      autoOpen: false,
-      width: 600,
-      modal: true,
-      title : 'settings',
-      buttons: {
-        "ok": function() { 
-          $(this).dialog("close"); 
-          dbg.run_delay = $('#settings_run_delay').val();
-          start_position = $('#settings_start_position').val();;
-          
-          codestore.save('settings','run_delay',dbg.run_delay);
-          codestore.save('settings','start_position',start_position);
-        }, 
-        "cancel": function() { 
-          $(this).dialog("close"); 
-        } 
-      }
-    });
-    $('#settings').click(function(){
-      $('#settings_run_delay').val(dbg.run_delay);
-      $('#settings_start_position').val(start_position);
-      $('#settings_dialog').dialog('open');
-      return false;
-    });
-    
-    $('#about_dialog').dialog({
-      autoOpen: false, width: 600, modal: true, title : 'help about',
-      buttons: { "ok": function() { $(this).dialog("close"); }, }
-    });
-    $('#about').click(function(){ $('#about_dialog').dialog('open'); return false; });
-
-
-    handle_code_change = function() {
-      if(pending_changes) return;
-      pending_changes = true;
-      $('#source_label').val('*'+code_label);
-    }
-    
-    var code_label='';
-    var pending_changes=false;
-    $('#new_dialog').dialog({
-      autoOpen: false, width: 600, modal: true, title : 'new',
-      buttons: {
-        "ok": function() { 
-          $(this).dialog("close"); 
-          code_label = $('#new_name').val();
-          pending_changes = false;
-          $('#new_name').val('');
-          $('#source_label').val(code_label);
-          $('#source').removeAttr('disabled');
-          $('#source').val('');
-          handle_code_change();
-        }, 
-        "cancel": function() { $(this).dialog("close"); } 
-      }
-    });
-    $('#new').click(function(){ $('#new_dialog').dialog('open'); return false; });
-
-    $('#saveas_dialog').dialog({
-      autoOpen: false, width: 600, modal: true, title : 'Save As',
-      buttons: {
-        "ok": function() { 
-          $(this).dialog("close"); 
-          code_label = $('#saveas_name').val();
-          pending_changes = true;
-          $('#saveas_name').val('');
-          $('#source_label').val(code_label);
-          codestore.save('code',code_label,$('#source').val());
-          handle_code_change();
-        }, 
-        "cancel": function() { $(this).dialog("close"); } 
-      }
-    });
-    $('#saveas').click(function(){ $('#saveas_dialog').dialog('open'); return false; });
-
-    
-    
-    $('#source').change( function() {
-      handle_code_change();
-    });
-  
-    $('#source').keypress( function() {
-      handle_code_change();
-    });
-    $('#save').click( function() {
-      pending_changes = false;
-      $('#source_label').val(code_label);
-      codestore.save('code',code_label,$('#source').val());
-    });
-    $('#source').keydown( function(e) {
-      if(e.keyCode === 9) { // tab was pressed
-        // get caret position/selection
-        var start = this.selectionStart;
-            end = this.selectionEnd;
-
-        var $this = $(this);
-
-        // set textarea value to: text before caret + tab + text after caret
-        $this.val($this.val().substring(0, start)
-                    + "\t"
-                    + $this.val().substring(end));
-
-        // put caret at right position again
-        this.selectionStart = this.selectionEnd = start + 1;
-
-        // prevent the focus lose
-        return false;
-    }
-    });
-    
-  </script>
 
 </html>
   
