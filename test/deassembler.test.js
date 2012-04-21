@@ -76,6 +76,26 @@ module.exports = {
     var code = deassembly.source;
     assert.equal(code,target_code);
   }, 
+  'test deassembler [A+nw]' : function() { 
+    var orig_code = 'SET X,[J+0x40]\n';
+    var target_code = 'SET X,[0x40+J]\n';
+    var assembly = assembler.assemble(orig_code);
+    var byte_code = assembly.byte_code;
+    var labels = assembly.labels;
+    var deassembly = deassembler.deassemble(byte_code,labels);
+    var code = deassembly.source;
+    assert.equal(code,target_code);
+  }, 
+  'test deassembler [label+J]' : function() { 
+    var orig_code = ':_label SET X,[J+_label]\n';
+    var target_code = ':_label SET X,[_label+J]\n';
+    var assembly = assembler.assemble(orig_code);
+    var byte_code = assembly.byte_code;
+    var labels = assembly.labels;
+    var deassembly = deassembler.deassemble(byte_code,labels);
+    var code = deassembly.source;
+    assert.equal(code,target_code);
+  }, 
 
   
 }
