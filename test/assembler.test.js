@@ -171,6 +171,10 @@ module.exports = {
     var target_byte_code = [0x0170,0x0041,0x0062,0x0063,0x0020,0x0006,0x0000];
     run_assembler_test_case(code,target_byte_code);
   },
-
+  'test assembler test character literal' : function() { 
+    var code = 'SET A,"b"';
+    var target_byte_code = [0x7c01,0x0062];
+    run_assembler_test_case(code,target_byte_code);
+  },
 }
 

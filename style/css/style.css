@@ -1,0 +1,49 @@
+body{ font: 80.0% "Trebuchet MS", sans-serif; margin: 50px;}
+.demoHeaders { margin-top: 2em; }
+.dialog_link {padding: .4em 1em .4em 20px;text-decoration: none;position: relative;}
+.dialog_link span.ui-icon {margin: 0 5px 0 0;position: absolute;left: .2em;top: 50%;margin-top: -8px;}
+ul#icons {margin: 0; padding: 0;}
+ul#icons li {margin: 2px; position: relative; padding: 4px 0; cursor: pointer; float: left;  list-style: none;}
+ul#icons span.ui-icon {float: left; margin: 0 4px;}
+
+.code {
+  font-family: Courier New;
+}
+#source {
+  font-family: Courier New;
+}
+.memory_cell {
+  font-size: 0.8em;
+}
+.label {
+  font-weight:bold; 
+}
+.register_label {
+  font-weight:bold;
+  text-align:left;
+  padding :0 0 0 0;
+  margin:0 0 0 10;
+}
+.register_value {
+  width:40px;
+  text-align:right;
+  padding :0 10 0 0;
+  margin:0 0 10 0;
+}
+.selected {
+  background:wheat;
+}
+.current_pc {
+  background:wheat;
+}
+
+#ribbon {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 2;
+}
+
+.memory_changed {
+  background:orange;
+}

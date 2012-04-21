@@ -61,6 +61,29 @@ module.exports = {
     dbg.step();
     dbg.step();
     assert.equal(0x20,dbg.cpu.get_register('PC'));
+  }  ,
+  'test mul' : function() { 
+    var code = 'SET A,0x02\nMUL A,0x02';
+    var cpu = new CPU.CPU();
+    var dbg = new Debugger.Debugger(cpu);
+    dbg.load(0,code);
+    dbg.step();
+    dbg.step();
+    assert.equal(0x4,dbg.cpu.get_register('A'));
+  },
+  'test ife' : function() { 
+    var code = 'SET A,0x02\nIFE A,0x02\nSET A,0x30\nIFE A,0x02\nSET A,0xFFFF';
+    var cpu = new CPU.CPU();
+    var dbg = new Debugger.Debugger(cpu);
+    dbg.load(0,code);
+    dbg.step();
+    dbg.step();
+    dbg.step();
+    assert.equal(0x30,dbg.cpu.get_register('A'));
+    dbg.step();
+    dbg.step();
+    assert.equal(0x30,dbg.cpu.get_register('A'));
+    
   }  
 
 }
