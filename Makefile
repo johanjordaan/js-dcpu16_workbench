@@ -25,9 +25,12 @@ minify: init_minify $(LIB)
 package: minify
 	@mkdir js-dcpu16_workbench -p 
 	@mkdir js-dcpu16_workbench/js -p 
+	@mkdir js-dcpu16_workbench/js/codemirror -p 
 	@mkdir js-dcpu16_workbench/lib -p 
 	@cp lib_min/*.js js-dcpu16_workbench/lib/ 
 	@cp js/*.js js-dcpu16_workbench/js/
+	@cp js/codemirror/*.js js-dcpu16_workbench/js/codemirror
+	@cp js/codemirror/*.css js-dcpu16_workbench/js/codemirror
 	@sed 's/version:dev/version:$(VERSION)/' workbench.html > js-dcpu16_workbench/index.html
 	@cp -r style js-dcpu16_workbench/style
 	@tar czf js-dcpu16_workbench_$(VERSION).tar.gz js-dcpu16_workbench
