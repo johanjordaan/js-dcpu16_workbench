@@ -22,9 +22,10 @@
     <script src="lib/deassembler.js"></script> 
     <script src="lib/debugger.js"></script> 
     <script src="lib/codestore.js"></script> 
-    <script src="lib/dyno_edit.js"></script> 
-
     <script src="lib/screen.js"></script> 
+
+    <script src="lib/dyno_edit.js"></script> 
+    <script src="lib/workbench.js"></script> 
     
     <script>
       var ejs = require('ejs');
@@ -32,7 +33,12 @@
       var dbg;
       var main_screen,preview_screen;
       var start_position;
-    
+      var editor;
+      var code_label='new';
+      var pending_changes=true;
+      var unnamed_code=true;
+      
+      
       zero_fill = function( number, width ) {
         width -= number.toString().length;
         if ( width > 0 )
@@ -43,7 +49,7 @@
       }  
 
       show_cpu = function() {
-        $('#cpu').html(ejs.render($('#cpu_template').html(),{cpu:dbg.cpu,memory_offset:0x8000}));
+        $('#cpu').html(ejs.render($('#cpu_template').html(),{cpu:dbg.cpu,memory_offset:0}));
         for(var i=0;i<dbg.cpu.memory_changes.length;i++) {
           $('#memory').find('#'+dbg.cpu.memory_changes[i]+'.memory_cell').addClass('memory_changed');
         }
@@ -51,8 +57,16 @@
 
       show_debugger = function() {
         if(dbg.assembly.errors.length>0) {
-          $('#debugger').html(ejs.render($('#error_list_template').html(),{errors:dbg.assembly.errors}));          
+          $('#errors').html(ejs.render($('#error_list_template').html(),{errors:dbg.assembly.errors}));          
+          $('#debugger').html($('#errors').html());          
+          
+          $('.error_line').dblclick(function() { 
+            editor.focus();
+            editor.setCursor(this.id-1);
+          });
+
         } else {
+          $('#errors').html('Code OK');
           $('#debugger').html(ejs.render($('#debugger_template').html(),{lines:dbg.deassembly.lines,breakpoints:dbg.breakpoints}));
           $('#debugger_source').find('tr#'+dbg.current_line).css('backgroundColor', 'wheat');
           $('td.breakpoint').click( function() {
@@ -61,38 +75,50 @@
           });
         }
       }
-      show_screen = function() {
-        main_screen.update();
-        preview_screen.update();
+     
+      handle_editor_changes = function() {
+        handle_code_changes();
+        dbg.load(start_position,editor.getValue());
+        show_cpu();
+        show_debugger();
       }
 
+      handle_code_changes = function() {
+        if(pending_changes) return;
+        pending_changes = true;
+        $('#editor_tab_tab').html('*'+code_label);
+      }
+      
     $(function() {
       cpu = new CPU()
       dbg = new Debugger(cpu);
       preview_screen = new Screen(cpu,$('#preview_screen')[0],2);
       main_screen = new Screen(cpu,$('#main_screen')[0],5);
       start_position = 0;
-
-      var editor = CodeMirror.fromTextArea(document.getElementById("source"), {
+     
+      editor = CodeMirror.fromTextArea(document.getElementById("source"), {
         lineNumbers: true,
-        tabSize: 4,
-        indentUnit: 4,
+        tabSize: 2,
+        indentUnit: 2,
         indentWithTabs: true,
-        mode: "dcpu"
+        tabMode : "spaces",
+        mode: "dcpu",
+        onChange : handle_editor_changes,
+        height: "100%"
       });
 
-      
+      $('#editor_tab_tab').html('*'+code_label);
       
       dbg.run_delay = codestore.loadInt('settings','run_delay',200);
       start_position = codestore.loadInt('settings','start_position',0);
       
-      
       show_cpu();
-      show_screen();
+      main_screen.update();
+      preview_screen.update();
 
       $('#tabs').tabs();
       $('button').button();
-
+      
       $('.dyno_register').click(dyno(function(id,val) { 
         if(id == 'PC') 
           dbg.cpu.pc = parseInt(val);
@@ -103,36 +129,53 @@
         show_debugger();
       }));
       
-      $('#step').click( function() {
+      $('#debug-step').click( function() {
         dbg.step();
         show_cpu();
-        show_screen();
         show_debugger();
+        preview_screen.update();
       });
 
-      $('#reset').click( function() {
+      $('#debug-reset').click( function() {
         dbg.reset();
         show_cpu();
         show_debugger();
-        show_screen();          
+        preview_screen.update();
       });
-        
-      $('#compile').click( function() {
-        dbg.load(start_position,editor.getValue());
-        $('#debugger_tab_tab').click();
+
+      $('#output-reset').click( function() {
+        dbg.reset();
         show_cpu();
         show_debugger();
-        show_screen();
+        main_screen.update();
       });
 
-      $('#run').click( function() {
-        dbg.run(function() { show_cpu();show_debugger();show_screen(); });
+      
+      
+      $('#reset').click( function() {
+        dbg.reset();
+        main_screen.update();
+      });
+      
+      $('#debug-run').click( function() {
+        dbg.run(function() { 
+          show_cpu();
+          show_debugger();
+          preview_screen.update(); 
+        });
       });
 
-      $('#stop').click( function() {
+      $('#run, #output-run').click( function() {
+        $('#output_tab_tab').click();
+        dbg.run(function() { 
+          main_screen.update(); 
+        },1,500);
+      });
+
+      $('#debug-pause,#stop,#output-stop').click( function() {
         dbg.pause();
       });
-
+      
       $('#load_dialog').dialog({
         autoOpen: false,
         width: 600,
@@ -148,7 +191,8 @@
               editor.setValue(codestore.load(keyParts.table,keyParts.key,''));
               $('#source').removeAttr('disabled');
               pending_changes = false;
-              $('#source_label').val(code_label);
+              $('#editor_tab_tab').html(code_label);
+              unnamed_code = false;
             }
             $(this).dialog("close"); 
           }, 
@@ -216,33 +260,12 @@
 
       $('#about').click(function(){ $('#about_dialog').dialog('open'); return false; });
 
-
-      handle_code_change = function() {
-        if(pending_changes) return;
-        pending_changes = true;
-        $('#source_label').val('*'+code_label);
-      }
-    
-      var code_label='';
-      var pending_changes=false;
-      $('#new_dialog').dialog({
-        autoOpen: false, width: 600, modal: true, title : 'new',
-        buttons: {
-          "ok": function() { 
-            $(this).dialog("close"); 
-            code_label = $('#new_name').val();
-            pending_changes = false;
-            $('#new_name').val('');
-            $('#source_label').val(code_label);
-            $('#source').removeAttr('disabled');
-            $('#source').val('');
-            handle_code_change();
-          }, 
-          "cancel": function() { $(this).dialog("close"); } 
-        }
+      $('#new').click(function() { 
+        unnamed_code = true
+        code_label = 'new';
+        pending_changes = false;
+        editor.setValue('');
       });
-    
-      $('#new').click(function(){ $('#new_dialog').dialog('open'); return false; });
 
       $('#saveas_dialog').dialog({
         autoOpen: false, width: 600, modal: true, title : 'Save As',
@@ -252,48 +275,25 @@
             code_label = $('#saveas_name').val();
             pending_changes = true;
             $('#saveas_name').val('');
-            $('#source_label').val(code_label);
-            codestore.save('code',code_label,$('#source').val());
-            handle_code_change();
+            $('#editor_tab_tab').html(code_label);
+            unnamed_code = false;
+            codestore.save('code',code_label,editor.getValue());
+            handle_code_changes();
           }, 
           "cancel": function() { $(this).dialog("close"); } 
         }
       });
       $('#saveas').click(function(){ $('#saveas_dialog').dialog('open'); return false; });
 
-      $('#source').change( function() {
-        handle_code_change();
-      });
-  
-      $('#source').keypress( function() {
-        handle_code_change();
-      });
       $('#save').click( function() {
-        pending_changes = false;
-        $('#source_label').val(code_label);
-        codestore.save('code',code_label,$('#source').val());
-      });
-      $('#source').keydown( function(e) {
-        if(e.keyCode === 9) { // tab was pressed
-          // get caret position/selection
-          var start = this.selectionStart;
-              end = this.selectionEnd;
-
-          var $this = $(this);
-
-          // set textarea value to: text before caret + tab + text after caret
-          $this.val($this.val().substring(0, start)
-                      + "\t"
-                      + $this.val().substring(end));
-
-          // put caret at right position again
-          this.selectionStart = this.selectionEnd = start + 1;
-
-          // prevent the focus lose
-          return false;
+        if(unnamed_code) {
+          $('#saveas_dialog').dialog('open');
+        } else {
+          pending_changes = false;
+          $('#editor_tab_tab').html(code_label);
+          codestore.save('code',code_label,editor.getValue());
         }
       });
-      
     });
   </script>
   
@@ -301,7 +301,7 @@
       <table id='error_list' cellspacing=0 width="100%">
         <% for(var i=0;i<errors.length;i++) { %>
         <% var error = errors[i] %>
-          <tr>
+          <tr id='<%= error.line %>'  class='error_line'>
             <td><%= error.line %></td>
             <td><%= error.type %></td>
             <td><%= error.msg %></td>
@@ -409,53 +409,38 @@
 		</a>
   
     <p>
-      <a href="#" id="compile" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>compile</a>
-      <a href="#" id="about"  style='float:right' class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>about</a>
-      <a href="#" id="settings"  style='float:right' class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>settings</a>
+      <a href="#" id="settings"  class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-gear"></span>settings</a>
+      <a href="#" id="about"  class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-help"></span>about</a>
     </p>
 
  		<div id="tabs">
 			<ul>
-				<li><a href="#editor_tab">editor</a></li>
+				<li><a href="#editor_tab" id="editor_tab_tab">editor</a></li>
 				<li><a href="#debugger_tab" id="debugger_tab_tab">debugger</a></li>
-        <li><a href="#output_tab">output</a></li>
+        <li><a href="#output_tab" id="output_tab_tab">output</a></li>
 			</ul>
 			<div id="editor_tab">
         <p>
           <a href="#" id="new" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>new</a>
           <a href="#" id="save" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>save</a>
-          <a href="#" id="save as" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>save as</a>
+          <a href="#" id="saveas" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>save as</a>
           <a href="#" id="load" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-newwin"></span>load</a>
-        </p>
-        <table style="width:100%;height:100%">
-          <tr valign='top' style='height:0'>
-            <td><input type='text' id='source_label' style='width:100%' disabled></input></td>
-          </tr>
-          <tr valign="top">
-            <td colspan='2'><textarea id='source' cols='80' wrap='off' style='width:100%;height:100%' class='CodeMirror-scroll cm-s-default'  disabled></textarea></td>
-          </tr>
-        </table>
-      </div>
-      <div id="output_tab">
-        <p>
           <a href="#" id="run" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-play"></span>run</a>
-          <a href="#" id="stop" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-pause"></span>stop</a>
-          <a href="#" id="reset" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-refresh"></span>reset</a>
         </p>
-        <table>
-          <tr>
-            <td valign="center">
-              <canvas id="main_screen" width="420" height="320"></canvas>
-            </td>
+        <table style='width:100%;height:100%' id="editor-table">
+          <tr valign='top'>
+            <td style='height:100%'><textarea id='source' cols='80' wrap='off' style='width:100%;height:100%' class='CodeMirror-scroll cm-s-default'></textarea></td>
+            <td style='width:20px' valign='center'><span class="ui-icon ui-icon-grip-dotted-vertical"></span></td>
+            <td style='width:40%' id='errors'>Errorrs here</td>
           </tr>
         </table>
       </div>
 			<div id="debugger_tab">
         <p>
-          <a href="#" id="run" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-play"></span>run</a>
-          <a href="#" id="stop" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-pause"></span>stop</a>
-          <a href="#" id="step" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-seek-next"></span>step</a>
-          <a href="#" id="reset" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-refresh"></span>reset</a>
+          <a href="#" id="debug-run" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-wrench"></span>run</a>
+          <a href="#" id="debug-pause" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-pause"></span>pause</a>
+          <a href="#" id="debug-step" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-seek-next"></span>step</a>
+          <a href="#" id="debug-reset" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-refresh"></span>reset</a>
         </p>
         <table style="width:100%;height:100%">
           <td width="50%" valign="top">
@@ -477,6 +462,20 @@
           </td>
         </table>
       </div>
+      <div id="output_tab">
+        <p>
+          <a href="#" id="output-run" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-play"></span>run</a>
+          <a href="#" id="output-stop" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-pause"></span>stop</a>
+          <a href="#" id="output-reset" class="dialog_link ui-state-default ui-corner-all"><span class="ui-icon ui-icon-refresh"></span>reset</a>
+        </p>
+        <table>
+          <tr>
+            <td valign="center">
+              <canvas id="main_screen" width="420" height="320"></canvas>
+            </td>
+          </tr>
+        </table>
+      </div>
 		</div>
     <div class="fb-like" data-href="http://dcpu16_workbench.whoatemydomain.co.za//" data-send="true" data-width="450" data-show-faces="false"></div>
 
@@ -486,11 +485,11 @@
     </div>
     <div id='about_dialog'>
 	  <p>
-        <a href='https://github.com/whoatemydomain/js-dcpu16_workbench' target='_blank' id="dialog_link" class="ui-state-default ui-corner-all">
+        <a href='https://github.com/whoatemydomain/js-dcpu16_workbench' target='_blank' class="dialog_link ui-state-default ui-corner-all">
 	      <span class="ui-icon ui-icon-newwin"></span>Source at GitHub</a>
-        <a href='https://github.com/whoatemydomain/js-dcpu16_workbench/wiki/Quick-Start' target='_blank' id="dialog_link" class="ui-state-default ui-corner-all">
+        <a href='https://github.com/whoatemydomain/js-dcpu16_workbench/wiki/Quick-Start' target='_blank' class="dialog_link ui-state-default ui-corner-all">
 		  <span class="ui-icon ui-icon-newwin"></span>Quick Start</a>
-        <a href='https://github.com/whoatemydomain/js-dcpu16_workbench/issues' target='_blank' id="dialog_link" class="ui-state-default ui-corner-all">
+        <a href='https://github.com/whoatemydomain/js-dcpu16_workbench/issues' target='_blank' class="dialog_link ui-state-default ui-corner-all">
 		  <span class="ui-icon ui-icon-newwin"></span>Issues</a>
       </p>
 	
@@ -509,15 +508,6 @@
       </table>
     </div>
     
-    <div id='new_dialog'>
-      <table>
-        <tr>
-          <td>Name</td>
-          <td>: <input type='text' id='new_name' style='width:150px'/> </td>
-        </tr>
-      </table>
-    </div>
-
     <div id='saveas_dialog'>
       <table>
         <tr>
