@@ -49,7 +49,7 @@
       }  
 
       show_cpu = function() {
-        $('#cpu').html(ejs.render($('#cpu_template').html(),{cpu:dbg.cpu,memory_offset:0}));
+        $('#cpu').html(ejs.render($('#cpu_template').html(),{cpu:dbg.cpu,memory_offset:0x8000}));
         for(var i=0;i<dbg.cpu.memory_changes.length;i++) {
           $('#memory').find('#'+dbg.cpu.memory_changes[i]+'.memory_cell').addClass('memory_changed');
         }
@@ -79,6 +79,7 @@
       handle_editor_changes = function() {
         handle_code_changes();
         dbg.load(start_position,editor.getValue());
+        load_font();
         show_cpu();
         show_debugger();
       }
@@ -138,6 +139,7 @@
 
       $('#debug-reset').click( function() {
         dbg.reset();
+        load_font();  
         show_cpu();
         show_debugger();
         preview_screen.update();
@@ -145,6 +147,7 @@
 
       $('#output-reset').click( function() {
         dbg.reset();
+        load_font();
         show_cpu();
         show_debugger();
         main_screen.update();
@@ -154,6 +157,7 @@
       
       $('#reset').click( function() {
         dbg.reset();
+        load_font();
         main_screen.update();
       });
       
@@ -294,6 +298,10 @@
           codestore.save('code',code_label,editor.getValue());
         }
       });
+      
+      load_font();
+      
+      
     });
   </script>
   
@@ -370,7 +378,7 @@
         <tr>
           <td colspan='9'><input id='memory_offset'/></td>
         </td>
-        <% for(var r=0;r<20;r++) { %>
+        <% for(var r=0;r<80;r++) { %>
         <tr>
           <td class='memory_cell label'><%= zero_fill(((r*8)+parseInt(memory_offset)).toString(16),4) %>:</td>
           <% for(var c=0;c<8;c++) { %>
@@ -403,6 +411,7 @@
   
   </head>
   <body>
+    <canvas id="fontCanvas" width="420" height="324" style="display:none"></canvas>
     <h1>DCPU-16 Workbench (version:dev)</h1>
     <a href="http://github.com/whoatemydomain/js-dcpu16_workbench"> 
 		  <img alt="Fork me on GitHub" id="ribbon" src="http://s3.amazonaws.com/github/ribbons/forkme_right_white_ffffff.png"> 

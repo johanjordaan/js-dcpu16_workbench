@@ -180,7 +180,6 @@ module.exports = {
     var code = 'SET A,[B+0x30]';
     var target_byte_code = [0x4401,0x0030];
     run_assembler_test_case(code,target_byte_code);
-  },
-
+  }
 }
 
