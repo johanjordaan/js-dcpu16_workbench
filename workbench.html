@@ -96,7 +96,8 @@
       preview_screen = new Screen(cpu,$('#preview_screen')[0],2);
       main_screen = new Screen(cpu,$('#main_screen')[0],5);
       start_position = 0;
-     
+      cpu.on_memory_change(0x8000,0x8180,function(pos) { main_screen.update(pos); } );
+      
       editor = CodeMirror.fromTextArea(document.getElementById("source"), {
         lineNumbers: true,
         tabSize: 2,
@@ -114,8 +115,8 @@
       start_position = codestore.loadInt('settings','start_position',0);
       
       show_cpu();
-      main_screen.update();
-      preview_screen.update();
+      main_screen.refresh();
+      preview_screen.refresh();
 
       $('#tabs').tabs();
       $('button').button();
@@ -134,7 +135,7 @@
         dbg.step();
         show_cpu();
         show_debugger();
-        preview_screen.update();
+        preview_screen.refresh();
       });
 
       $('#debug-reset').click( function() {
@@ -142,7 +143,7 @@
         load_font();  
         show_cpu();
         show_debugger();
-        preview_screen.update();
+        preview_screen.refresh();
       });
 
       $('#output-reset').click( function() {
@@ -150,7 +151,7 @@
         load_font();
         show_cpu();
         show_debugger();
-        main_screen.update();
+        main_screen.refresh();
       });
 
       
@@ -158,26 +159,48 @@
       $('#reset').click( function() {
         dbg.reset();
         load_font();
-        main_screen.update();
+        main_screen.refresh();
       });
       
       $('#debug-run').click( function() {
         dbg.run(function() { 
           show_cpu();
           show_debugger();
-          preview_screen.update(); 
+          preview_screen.refresh(); 
         });
       });
-
+      
+      var handle_key = function(key) {
+        var mem_pos = cpu.get_memory(0x9010);
+        if(mem_pos==0x900f) {
+          mem_pos==0x9000;
+        }
+        if( cpu.get_memory(mem_pos) == 0) {
+          cpu.set_memory(mem_pos,key);
+          cpu.set_memory(0x9010,mem_pos);
+        }
+          
+      }
+      
       $('#run, #output-run').click( function() {
         $('#output_tab_tab').click();
+        $('body').keypress(function(e) { handle_key(e.which); return false;});
+        $('body').keydown(function(e) {
+          var handledKeys = [8,32,37,38,39,40];
+          if(handledKeys.indexOf(e.which) !== -1) {
+            handle_key(e.which);    
+            return false;
+          }
+        });
         dbg.run(function() { 
-          main_screen.update(); 
+          //main_screen.update(); 
         },1,500);
       });
 
       $('#debug-pause,#stop,#output-stop').click( function() {
         dbg.pause();
+        $('body').unbind('keypress',null);
+        $('body').unbind('keydown',null);
       });
       
       $('#load_dialog').dialog({
@@ -300,7 +323,6 @@
       });
       
       load_font();
-      
       
     });
   </script>
