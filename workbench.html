@@ -49,7 +49,7 @@
       }  
 
       show_cpu = function() {
-        $('#cpu').html(ejs.render($('#cpu_template').html(),{cpu:dbg.cpu,memory_offset:0x8000}));
+        $('#cpu').html(ejs.render($('#cpu_template').html(),{cpu:dbg.cpu,memory_offset:0x9000}));
         for(var i=0;i<dbg.cpu.memory_changes.length;i++) {
           $('#memory').find('#'+dbg.cpu.memory_changes[i]+'.memory_cell').addClass('memory_changed');
         }
@@ -96,7 +96,7 @@
       preview_screen = new Screen(cpu,$('#preview_screen')[0],2);
       main_screen = new Screen(cpu,$('#main_screen')[0],5);
       start_position = 0;
-      cpu.on_memory_change(0x8000,0x8180,function(pos) { main_screen.update(pos); } );
+      cpu.on_memory_change(0x8000,0x8180,function(pos) { main_screen.update(pos); preview_screen.update(pos); } );
       
       editor = CodeMirror.fromTextArea(document.getElementById("source"), {
         lineNumbers: true,
@@ -162,28 +162,20 @@
         main_screen.refresh();
       });
       
-      $('#debug-run').click( function() {
-        dbg.run(function() { 
-          show_cpu();
-          show_debugger();
-          preview_screen.refresh(); 
-        });
-      });
-      
       var handle_key = function(key) {
         var mem_pos = cpu.get_memory(0x9010);
         if(mem_pos==0x900f) {
-          mem_pos==0x9000;
-        }
+          mem_pos=0x9000;
+        } 
         if( cpu.get_memory(mem_pos) == 0) {
           cpu.set_memory(mem_pos,key);
-          cpu.set_memory(0x9010,mem_pos);
+          cpu.set_memory(0x9010,++mem_pos);
         }
-          
       }
-      
-      $('#run, #output-run').click( function() {
-        $('#output_tab_tab').click();
+
+      $('#run, #output-run, #debug-run').click( function() {
+        if(this.id=='run')
+          $('#output_tab_tab').click();
         $('body').keypress(function(e) { handle_key(e.which); return false;});
         $('body').keydown(function(e) {
           var handledKeys = [8,32,37,38,39,40];
@@ -192,15 +184,15 @@
             return false;
           }
         });
-        dbg.run(function() { 
-          //main_screen.update(); 
-        },1,500);
+        dbg.run(function() { show_cpu(); },1,500);
       });
 
-      $('#debug-pause,#stop,#output-stop').click( function() {
+      $('#stop, #output-stop, #debug-pause').click( function() {
         dbg.pause();
         $('body').unbind('keypress',null);
         $('body').unbind('keydown',null);
+        show_cpu();
+        show_debugger();
       });
       
       $('#load_dialog').dialog({
